@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Land Measurement</title>
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Menggunakan font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800 overflow-x-hidden">
+
+   
+
+    <!-- Konten Utama -->
+    <main>
+        <!-- ============================================== -->
+        <!-- "About" Section                            -->
+        <!-- ============================================== -->
+        <!-- Diberi padding atas (pt-40) untuk memberi ruang dari navbar fixed -->
+        <section id="about" class="py-24 pt-40 bg-white">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <!-- Judul -->
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
+                    About <span class="text-teal-600">Land Measurement</span>
+                </h1>
+                <!-- Isi -->
+                <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                    We understand how complex manual field calculations can be. 
+                    <span class="text-teal-600 font-medium">Land Measurement</span> was born from the need to automate the surveyor's work, making it more efficient and free from calculation errors. Our mission is to provide powerful, intuitive tools that save you time and ensure accuracy on every project.
+                </p>
+                <p class="text-lg text-gray-600 leading-relaxed">
+                    Built by surveyors, for surveyors, our platform integrates seamlessly into your workflow, whether you're handling Leveling data, calculating Cut & Fill volumes, or managing complex project files.
+                </p>
+                <!-- Tambahan gambar atau info tim bisa di sini -->
+                <div class="mt-16">
+                    <img src="https://placehold.co/800x400/134E4A/FFFFFF?text=Team+Photo+or+Diagram" alt="About Land Measurement" class="rounded-xl shadow-lg mx-auto">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    
+    <!-- Script untuk Mobile Menu -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu-dropdown'); 
+            if(menuButton && mobileMenu) {
+                menuButton.addEventListener('click', function (event) {
+                    event.stopPropagation(); 
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            document.addEventListener('click', function (event) {
+                if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                    if (!mobileMenu.contains(event.target) && !menuButton.contains(event.target)) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+{% endblock content %}

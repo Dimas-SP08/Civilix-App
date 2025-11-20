@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{%block content %}
+<div class="bg-slate-50 text-gray-800 overflow-x-hidden">
+
+    <!-- ============================================== -->
+    
+    <!-- Konten Utama -->
+    <main class="py-24 pt-40 bg-slate-50 min-h-screen">
+        <!-- ============================================== -->
+        <!-- Halaman Dokumentasi (BARU)                   -->
+        <!-- ============================================== -->
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Judul -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900">Documentation</h1>
+                <p class="mt-4 text-lg text-gray-600">Learn how to use Land Measurement effectively.</p>
+            </div>
+            
+            <!-- Konten Dokumentasi -->
+            <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl border border-gray-100 space-y-12">
+                
+                <!-- Bagian 1: Getting Started -->
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">Getting Started</h2>
+                    <p class="text-gray-600 mb-4">Welcome! Here's how to get started with the platform:</p>
+                    <ul class="list-decimal list-outside pl-6 space-y-2 text-gray-700">
+                        <li><strong>Guest Mode:</strong> You can try our calculation tools immediately without an account. Note that your work will not be saved.</li>
+                        <li><strong>Register Account:</strong> Create a free account to save all your projects, access them from any device, and manage your data in the cloud.</li>
+                        <li><strong>Login:</strong> Access your personal dashboard with all your saved projects.</li>
+                    </ul>
+                </section>
+
+                <!-- Bagian 2: Leveling Calculations -->
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">How to Use Leveling Calculations</h2>
+                    <p class="text-gray-600 mb-4">Our Sipat Datar (Leveling) tool is designed for speed and accuracy.</p>
+                    <ol class="list-decimal list-outside pl-6 space-y-2 text-gray-700">
+                        <li>Navigate to the "Leveling" tool from your dashboard or the guest mode portal.</li>
+                        <li>
+                            <strong>Input Data:</strong> You can either:
+                            <ul class="list-disc list-inside pl-4 mt-2">
+                                <li>Upload an Excel file (template provided).</li>
+                                <li>Manually enter your station points, BS (Backsight), and FS (Foresight) data into the table.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>(Optional) 3-Wire Validation:</strong> If you used 3-wire leveling, enter your Top, Mid, and Bot readings. The system will automatically validate the accuracy (Top + Bot) / 2 = Mid and flag any errors.
+                        </li>
+                        <li><strong>Process:</strong> Click the "Calculate" button.</li>
+                        <li><strong>View Results:</strong> The system will instantly generate a complete table with Rise/Fall, Elevation (H), and corrections. You will also see an interactive Plotly graph visualizing the ground profile.</li>
+                    </ol>
+                </section>
+
+                <!-- Bagian 3: Cut & Fill Calculations -->
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">How to Use Cut & Fill Calculations</h2>
+                    <p class="text-gray-600 mb-4">Calculate excavation and embankment volumes with ease.</p>
+                    <ol class="list-decimal list-outside pl-6 space-y-2 text-gray-700">
+                        <li>Select the "Cut & Fill" tool.</li>
+                        <li>
+                            <strong>Input Data:</strong> Provide your stationing (STA) and existing ground elevation data.
+                        </li>
+                        <li>
+                            <strong>Set Design Elevation:</strong> Enter your proposed design elevation (this can be a single level or a varying slope).
+                        </li>
+                        <li><strong>Process:</strong> Click "Calculate Volume".</li>
+                        <li><strong>View Results:</strong> You will receive a detailed report showing the Cut (Galian) and Fill (Timbunan) volume at each station, as well as the total net volume.</li>
+                    </ol>
+                </section>
+
+                <!-- Bagian 4: Reports & Export -->
+                <section>
+                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">Understanding Your Results</h2>
+                    <p class="text-gray-600 mb-4">Your data is more than just numbers.</p>
+                    <ul class="list-disc list-outside pl-6 space-y-2 text-gray-700">
+                        <li><strong>Interactive Graphs:</strong> All calculation results are paired with Plotly graphs. You can zoom, pan, and hover over data points to get detailed information.</li>
+                        <li><strong>Gemini AI Reports:</strong> For logged-in users, you can click "Generate AI Analysis". Gemini will review your results and provide insights, such as identifying potential reading errors, noting the steepest slopes, or summarizing the overall project.</li>
+                        <li><strong>Excel Export:</strong> Click the "Export to Excel" button at any time to download a formatted `.xlsx` file containing both your raw input data and the complete calculated results.</li>
+                    </ul>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    
+    <!-- Script untuk Mobile Menu -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu-dropdown'); 
+            if(menuButton && mobileMenu) {
+                menuButton.addEventListener('click', function (event) {
+                    event.stopPropagation(); 
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            document.addEventListener('click', function (event) {
+                if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                    if (!mobileMenu.contains(event.target) && !menuButton.contains(event.target)) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                }
+            });
+        });
+    </script>
+</div>
+</html>
+{% endblock %}
