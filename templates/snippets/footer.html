@@ -1,11 +1,12 @@
+{% load static %}
 <!-- Footer -->
     <footer class="bg-onSurfaceStrong text-slate-400 py-12 border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                 <div class="col-span-1 md:col-span-1">
                     <a href="#" class="flex items-center gap-2 mb-4">
-                        <div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-lg">d</div>
-                        <span class="font-bold text-xl text-white tracking-tight">diespy</span>
+                        <img class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:rotate-6 transition-transform" src="{% static "img/diespy.png" %}" alt="">
+                        <span class="font-bold text-xl text-white tracking-tight">{{request.user.nama}}</span>
                     </a>
                     <p class="text-sm leading-relaxed">
                         Enterprise-grade survey calculation platform for the modern civil engineering workflow.

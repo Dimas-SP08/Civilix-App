@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+        /* Mengaplikasikan font Inter sebagai default */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+            background-image: radial-gradient(#cbd5e1 1px, transparent 0); /* slate-300 dots */
+            background-size: 20px 20px;
+        }
+        /* Menyembunyikan input file asli */
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+{% endblock extra_css %}
+{% block content %}
+
+<div class="">
+
+    <!-- Kontainer Utama Halaman -->
+    <main class="max-w-7xl mx-auto p-6 md:p-10">
+
+        <!-- Judul Halaman -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Edit Profile</h1>
+            <a href="profile.html" class="bg-white hover:bg-slate-50 text-slate-700 font-medium py-2 px-4 rounded-lg border border-slate-300 shadow-sm transition duration-200">
+                Cancel
+            </a>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="w-full">
+        {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <!-- Kolom Kiri: Kartu Avatar & Ganti Foto -->
+                <div class="col-span-1 flex flex-col gap-8">
+                    <div class="bg-white rounded-xl shadow-xl p-8 flex flex-col items-center text-center border border-gray-100">
+                        
+                        {% if request.user.img_user %}
+                            <img 
+                                src="{{ request.user.img_user.url }}" 
+                                alt="Profile Photo"
+                                id="avatar-preview"
+                                class="w-36 h-36 rounded-full object-cover mb-6 border-4 border-teal-500 shadow-md"
+                            >
+                        {% else %}
+                            <img 
+                                src="https://placehold.co/150x150/14B8A6/FFFFFF?text=No+Img" 
+                                alt="Default Photo"
+                                id="avatar-preview"
+                                class="w-36 h-36 rounded-full object-cover mb-6 border-4 border-gray-300 shadow-md"
+                            >
+                        {% endif %}
+
+                        <label for="img_user" class="w-full cursor-pointer bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-gray-900 transition duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Change Photo
+                        </label>
+
+                        <input 
+                            type="file" 
+                            id="img_user" 
+                            name="img_user"
+                            accept="image/*"
+                            onchange="previewImage(event)"
+                        >
+                        
+                        {% if request.user.img_user %}
+                            <div class="flex items-center justify-center gap-2 text-sm text-gray-600 mt-4">
+                                <input 
+                                    type="checkbox" 
+                                    id="img_user-clear" 
+                                    name="img_user-clear" 
+                                    class="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                                >
+                                <label for="img_user-clear">Hapus foto saat ini</label>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan: Formulir Edit -->
+                <div class="col-span-2 flex flex-col gap-8">
+                    
+                    <!-- Kartu Formulir Informasi Dasar -->
+                    <div class="bg-white rounded-xl shadow-xl p-8 md:p-10 border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit Information
+                        </h3>
+
+                        
+                            <!-- Grid untuk Form (dari referensi gambar) -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                
+                                <!-- Nama Lengkap -->
+                                <div>
+                                    <label for="nama" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                    <input type="text" id="nama" name="nama" value="{{ form.nama.value|default:request.user.nama }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                </div>
+
+                                <!-- Email (Disabled) -->
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" id="email" name="email" value="{{ form.email.value|default:request.user.email }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 " >
+                                </div>
+
+                                <!-- Tempat Lahir -->
+                                <div>
+                                    <label for="tmp_lahir" class="block text-sm font-medium text-gray-700 mb-1">Birthplace</label>
+                                    <input type="text" id="tmp_lahir" name="tmp_lahir" value="{{ form.tmp_lahir.value|default:request.user.tmp_lahir }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                </div>
+
+                                <!-- Tanggal Lahir -->
+                                <div>
+                                    <label for="tgl_lahir" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                                    <input type="date" id="tgl_lahir" name="tgl_lahir" value="{{ form.tgl_lahir.value|default:request.user.tgl_lahir|date:'Y-m-d' }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                </div>
+
+                                <!-- Nomor HP -->
+                                <div class="md:col-span-2">
+                                    <label for="no_hp" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                    <input type="tel" id="no_hp" name="no_hp" value="{{ form.no_hp.value|default:request.user.no_hp }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                </div>
+                            </div> <!-- End Grid Form -->
+
+                            <!-- Tombol Aksi -->
+                            <div class="border-t border-gray-200 pt-6 flex justify-end">
+                                <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+                                    Save Changes
+                                </button>
+                            </div>
+                        
+                    </div>
+
+                
+                </div>
+            </div>
+
+        </form>
+    </main>
+
+    <script>
+        // Script sederhana untuk pratinjau gambar
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('avatar-preview');
+                output.src = reader.result;
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    </script>
+
+</div>
+{% endblock content %}
+{% block extra_js %}
+
+{% endblock extra_js %}

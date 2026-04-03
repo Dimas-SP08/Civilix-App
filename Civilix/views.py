@@ -1,7 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 
 def index(request):
-    return render(request, 'index.html')
+    if request.user.is_authenticated:
+        return redirect('survey:index')
+    else:   
+        return render(request, 'index.html')
 
 def about(request):
     return render(request, 'about.html')
@@ -14,3 +17,4 @@ def docs(request):
 
 def contact(request):
     return render(request, 'contact.html')
+

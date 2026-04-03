@@ -15,28 +15,66 @@
     
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
+    {% block extra_css %}
+    
+    
+    {% endblock extra_css %}
     <!-- Tailwind Config -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
+                        // Gabungan Warna Lengkap
                         primary: '#006A6A',          
                         primaryHover: '#005555',
                         primaryContainer: '#CCE8E8', 
+                        tertiary: '#5D7D9A',         
+                        tertiaryContainer: '#EEF4F8', 
                         surface: '#F8FAFC',          
-                        onSurface: '#334155',        
-                        onSurfaceStrong: '#0F172A',
+                        card: '#FFFFFF',             
+                        onSurface: '#475569',        
+                        onSurfaceStrong: '#0F172A',  
+                        warning: '#F59E0B',          
+                        warningBg: '#FFFBEB',
+                        error: '#DC2626',            
+                        errorBg: '#FEF2F2',
+                        border: '#E2E8F0',
                     },
+                    // GABUNGAN SEMUA ANIMASI (Landing + Dashboard + Global)
                     animation: {
+                        // Global
+                        'slideDown': 'slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'swing': 'swing 1s infinite',
+                        
+                        // Dashboard Animations
+                        'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        
+                        // Landing Page Animations (YANG HILANG TADI)
                         'float': 'float 6s ease-in-out infinite',
-                        'popIn': 'popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards', // Added popIn back
+                        'popIn': 'popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                     },
                     keyframes: {
+                        slideDown: {
+                            '0%': { transform: 'translateY(-100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        swing: {
+                            '0%, 100%': { transform: 'rotate(0deg)' },
+                            '20%': { transform: 'rotate(15deg)' },
+                            '40%': { transform: 'rotate(-10deg)' },
+                            '60%': { transform: 'rotate(5deg)' },
+                            '80%': { transform: 'rotate(-5deg)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        // Keyframes Landing Page
                         float: {
                             '0%, 100%': { transform: 'translateY(0)' },
                             '50%': { transform: 'translateY(-20px)' },
@@ -52,52 +90,203 @@
     </script>
 
     <style>
-        /* Custom Utilities */
+        /* Global */
+        body { font-family: 'Inter', sans-serif; }
+
+        /* --- TAMBAHAN BARU: AGAR NAVBAR MUNCUL DI SEMUA HALAMAN --- */
         .glass-nav {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-        }
-        
-        .hero-pattern {
-            background-color: #F8FAFC;
-            background-image: radial-gradient(#006A6A 0.5px, transparent 0.5px);
-            background-size: 24px 24px;
-            opacity: 0.5;
-        }
+        } 
 
-        /* Animation Classes */
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        /* --- Style Khusus Landing Page --- */
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
         }
         
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
+        /* ... sisa css lainnya biarkan saja ... */
+        #navbar-container { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        #navbar-inner { transition: padding 0.4s ease; }
+        .dropdown-enter { transform: translateY(-10px); opacity: 0; }
+        .dropdown-enter-active {
+            transform: translateY(0); opacity: 1;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        
-        /* Utility for manually triggering animation via class if needed, 
-           though tailwind 'animate-popIn' works directly */
-        .animate-popIn {
-            opacity: 0; /* Start hidden */
-            animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .dropdown-exit { transform: translateY(0); opacity: 1; }
+        .dropdown-exit-active {
+            transform: translateY(-10px); opacity: 0;
+            transition: all 0.15s ease-in;
         }
-
-        .delay-100 { transition-delay: 0.1s; }
-        .delay-200 { transition-delay: 0.2s; }
-        .delay-300 { transition-delay: 0.3s; }
     </style>
 </head>
 
 <body>
-    {% include "snippets/navbar.html" %}
-    {% block content %}
-    
-    {% endblock content %}
 
-    {% include "snippets/footer.html" %}
-    
+    {% include "snippets/navbar.html" %}
+    <div class="{% if request.user.is_authenticated %}flex pt-20{% else %}flex flex-col min-h-screen{% endif %}">
+
+        {% if request.user.is_authenticated %}
+            {% include "snippets/sidebar.html" %}
+        {% endif %}
+
+        <div id="main-content" class="flex flex-col justify-between 
+            {% if request.user.is_authenticated %}
+                flex-1 w-full bg-slate-50 min-h-screen relative
+            {% else %}
+                flex-grow w-full
+            {% endif %}">
+            
+            <div class="flex-grow">
+                {% block content %}
+                {% endblock content %}
+            </div>
+
+            {% include "snippets/footer.html" %}
+            
+        </div>
+
+    </div>
+
+    {% block extra_js %}
+        
+        
+    {% endblock extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // ==========================================
+            // 1. GLOBAL INITIALIZATION
+            // ==========================================
+            lucide.createIcons();
+
+            // ==========================================
+            // 2. LOGIC A: LANDING PAGE NAVBAR (Mobile Menu & Scroll)
+            // ==========================================
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const navbarContainer = document.getElementById('navbar-container');
+            const navbarInner = document.getElementById('navbar-inner');
+
+            // Logic Mobile Menu (Landing Page)
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    if (mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.remove('hidden');
+                        setTimeout(() => {
+                            mobileMenu.classList.remove('scale-95', 'opacity-0');
+                            mobileMenu.classList.add('scale-100', 'opacity-100');
+                        }, 10);
+                    } else {
+                        mobileMenu.classList.remove('scale-100', 'opacity-100');
+                        mobileMenu.classList.add('scale-95', 'opacity-0');
+                        setTimeout(() => { mobileMenu.classList.add('hidden'); }, 200);
+                    }
+                });
+            }
+
+            // Logic Scroll Effect (Landing Page)
+            if (navbarContainer && navbarInner) {
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY > 20) {
+                        navbarContainer.classList.remove('pt-4', 'md:pt-6');
+                        navbarContainer.classList.add('pt-2', 'md:pt-2');
+                        navbarInner.classList.add('shadow-primary/10');
+                        navbarInner.classList.remove('shadow-primary/5');
+                    } else {
+                        navbarContainer.classList.add('pt-4', 'md:pt-6');
+                        navbarContainer.classList.remove('pt-2', 'md:pt-2');
+                        navbarInner.classList.remove('shadow-primary/10');
+                        navbarInner.classList.add('shadow-primary/5');
+                    }
+                });
+            }
+
+            // ==========================================
+            // 3. LOGIC B: DASHBOARD PROFILE DROPDOWN
+            // ==========================================
+            const userMenuBtn = document.getElementById('user-menu-button');
+            const userMenuDropdown = document.getElementById('user-menu-dropdown');
+            const chevronIcon = document.getElementById('chevron-icon');
+
+            if (userMenuBtn && userMenuDropdown) {
+                function toggleDropdown() {
+                    const isHidden = userMenuDropdown.classList.contains('hidden');
+                    if (isHidden) {
+                        // Show
+                        userMenuDropdown.classList.remove('hidden', 'dropdown-exit', 'dropdown-exit-active');
+                        userMenuDropdown.classList.add('dropdown-enter');
+                        if(chevronIcon) chevronIcon.classList.add('rotate-180');
+                        requestAnimationFrame(() => {
+                            userMenuDropdown.classList.add('dropdown-enter-active');
+                            userMenuDropdown.classList.remove('dropdown-enter');
+                        });
+                    } else {
+                        // Hide
+                        userMenuDropdown.classList.remove('dropdown-enter', 'dropdown-enter-active');
+                        userMenuDropdown.classList.add('dropdown-exit');
+                        if(chevronIcon) chevronIcon.classList.remove('rotate-180');
+                        requestAnimationFrame(() => {
+                            userMenuDropdown.classList.add('dropdown-exit-active');
+                            userMenuDropdown.classList.remove('dropdown-exit');
+                            setTimeout(() => { userMenuDropdown.classList.add('hidden'); }, 150);
+                        });
+                    }
+                }
+
+                userMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleDropdown();
+                });
+
+                // Tutup dropdown jika klik di luar
+                document.addEventListener('click', (e) => {
+                    if (!userMenuBtn.contains(e.target) && !userMenuDropdown.contains(e.target)) {
+                        if (!userMenuDropdown.classList.contains('hidden')) toggleDropdown();
+                    }
+                });
+            }
+        
+
+            // --- LOGIKA SIDEBAR JS ---
+            
+            // --- LOGIKA BUKA TUTUP SIDEBAR (LAPTOP & HP) ---
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            const toggleBtn = document.getElementById('sidebar-toggle-btn'); // Tombol di navbar
+            const overlay = document.getElementById('sidebar-overlay'); // Kalo pake overlay gelap di HP
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Biar kliknya gak bocor
+
+                    // 1. Geser sidebar masuk/keluar
+                    if (sidebar) sidebar.classList.toggle('-translate-x-full');
+                    
+                    // 2. Dorong konten utama ke kanan (khusus di laptop)
+                    if (mainContent) mainContent.classList.toggle('lg:ml-64');
+
+                    // 3. Munculkan overlay gelap (opsional untuk HP)
+                    if (overlay) overlay.classList.toggle('hidden');
+                });
+            }
+
+            // Kalau layar gelap (overlay) diklik, sidebar otomatis nutup
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    if (sidebar) sidebar.classList.add('-translate-x-full');
+                    if (mainContent) mainContent.classList.remove('lg:ml-64');
+                    overlay.classList.add('hidden');
+                });
+            }
+        });
+
+            
+    </script>
+
 </body>
 </html>

@@ -1,0 +1,2646 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+<style>
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #F1F5F9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        
+        /* Tab Styles & Transitions */
+        .tab-btn {
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #006A6A;
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tab-btn.active {
+            color: #006A6A;
+            background-color: #F0FDFA;
+        }
+        .tab-btn.active::after {
+            transform: scaleX(1);
+        }
+        
+        /* Content Animation Utility */
+        .tab-content { display: none; }
+        .tab-content.active { 
+            display: block; 
+            /* Animation is handled by JS adding classes */
+        }
+
+        /* Stagger Utilities for Initial Load */
+        .stagger-1 { animation-delay: 100ms; }
+        .stagger-2 { animation-delay: 200ms; }
+        .stagger-3 { animation-delay: 300ms; }
+        .stagger-4 { animation-delay: 400ms; }
+        
+        /* Initial hidden state for animations */
+        .reveal-load { opacity: 0; }
+
+        /* Hover Lift Effect */
+        .hover-card {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+        }
+        .hover-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+{% endblock extra_css %}
+{% block content %}
+
+<div class="bg-surface min-h-screen font-sans text-onSurface selection:bg-primary selection:text-white">
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="p-4 lg:p-8 max-w-[1600px] mx-auto">
+
+        <!-- I. HEADER & NAVIGATION CONTROLS -->
+        <header class="mb-8">
+            <!-- Breadcrumbs -->
+            <nav class="flex mb-4 reveal-load animate-fade-in-up" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-2">
+                    <li><a href="#" class="text-sm font-medium text-onSurface hover:text-primary transition-colors">Dashboard</a></li>
+                    <li><span class="text-onSurface/40">/</span></li>
+                    <li><span class="text-sm font-medium text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">{{project.project_name}}</span></li>
+                </ol>
+            </nav>
+
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 reveal-load animate-fade-in-up stagger-1">
+                <div>
+                    <h1 class="text-3xl font-bold text-onSurfaceStrong tracking-tight">{{project.project_name}}</h1>
+                    <p class="text-sm text-onSurface mt-1">Last updated: <span class="font-semibold">Just now</span> by <span class="font-semibold">{{form.nama}}</span></p>
+                </div>
+
+                <div class="mt-2 flex items-center gap-3">
+                    <span class="text-sm text-onSurface">Status:</span>
+                    <button onclick="toggleProjectStatus()" id="statusBadge" 
+                        class="px-3 py-1 rounded-full text-xs font-bold border transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2
+                        {% if project.status == 'COMPLETED' %}
+                            bg-emerald-100 text-emerald-700 border-emerald-200
+                        {% else %}
+                            bg-blue-100 text-blue-700 border-blue-200
+                        {% endif %}">
+                        
+                        {% if project.status == 'COMPLETED' %}
+                            <i data-lucide="check-circle-2" class="w-3 h-3"></i> Completed
+                        {% else %}
+                            <i data-lucide="loader" class="w-3 h-3 animate-spin-slow"></i> In Progress
+                        {% endif %}
+                    </button>
+                    <p class="text-xs text-slate-400">(Klik untuk mengubah)</p>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button class="group flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-lg text-onSurfaceStrong font-semibold hover:bg-slate-50 hover:border-primary/30 hover:text-primary transition-all shadow-sm transform active:scale-95 active:shadow-inner">
+                        <i data-lucide="printer" class="w-4 h-4 group-hover:scale-110 transition-transform"></i> Print PDF
+                    </button>
+                    
+                    <button onclick="runProcessAnimation()" class="group flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primaryHover text-white rounded-lg font-semibold shadow-lg shadow-primary/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
+                        <i data-lucide="refresh-cw" id="refresh-icon" class="w-4 h-4 transition-transform duration-700"></i>
+                        Recalculate
+                        
+                    </button>
+                    
+                        
+                            
+                            
+                    
+                    
+                </div>
+            </div>
+
+
+            <!-- Tab Navigation -->
+            <div class="mt-8 border-b border-border overflow-x-auto reveal-load animate-fade-in-up stagger-2">
+                <div class="flex space-x-2 min-w-max pb-1">
+                    <button onclick="switchTab('tab-analysis')" class="tab-btn active px-6 py-3 text-sm font-bold text-onSurface rounded-t-lg hover:text-primary flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Project Overview
+                    </button>
+                    <button onclick="switchTab('tab-raw')" class="tab-btn px-6 py-3 text-sm font-bold text-onSurface rounded-t-lg hover:text-primary flex items-center gap-2">
+                        <i data-lucide="table-2" class="w-4 h-4"></i> Long Section 
+                    </button>
+                    <button onclick="switchTab('tab-Cross')" class="tab-btn px-6 py-3 text-sm font-bold text-onSurface rounded-t-lg hover:text-primary flex items-center gap-2">
+                        <i data-lucide="table-2" class="w-4 h-4"></i> Cross Section 
+                    </button>
+                    <button onclick="switchTab('tab-cutfill')" class="tab-btn px-6 py-3 text-sm font-bold text-onSurface rounded-t-lg hover:text-primary flex items-center gap-2">
+                        <i data-lucide="shovel" class="w-4 h-4"></i> Cut & Fill 
+                    </button>
+                    <button onclick="switchTab('tab-autocad')" class="tab-btn px-6 py-3 text-sm font-bold text-onSurface rounded-t-lg hover:text-primary flex items-center gap-2">
+                        <i data-lucide="shovel" class="w-4 h-4"></i> Grafik to Autocad 
+                    </button>
+                    <button onclick="switchTab('tab-settings')" class="tab-btn px-6 py-3 text-sm font-bold text-onSurface rounded-t-lg hover:text-primary flex items-center gap-2">
+                        <i data-lucide="settings" class="w-4 h-4"></i> Project Settings
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+
+        
+        <!-- II. TAB 1: RESULTS & ANALYSIS -->
+        <section id="tab-analysis" class="tab-content active space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch mb-8">
+    
+                <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm relative flex flex-col h-full animate-fade-in-up group overflow-hidden cursor-default">
+                    
+                    <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-emerald-400 rounded-t-2xl z-20"></div>
+                    
+                    <div class="absolute -right-10 -bottom-10 opacity-[0.04] transition-all duration-1000 ease-in-out group-hover:scale-[1.3] group-hover:-rotate-12 group-hover:opacity-10 pointer-events-none z-0">
+                        <i data-lucide="sparkles" class="w-72 h-72 text-blue-600"></i>
+                    </div>
+                    
+                    <div class="px-6 md:px-8 py-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 mt-1 relative z-10 bg-white/50 backdrop-blur-sm">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600">
+                                <i data-lucide="bot" class="w-5 h-5"></i>
+                            </div>
+                            AI Survey Analysis Report
+                        </h3>
+                        <span class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-500 border border-slate-200">
+                            Civilix AI Engine
+                        </span>
+                    </div>
+
+                    <div class="p-6 md:p-8 flex flex-col flex-grow relative z-10" id="ai-report-container">
+
+                        {% if not project.ai_report %}
+                            <div id="no-report-state" class="text-center my-auto py-8">
+                                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 mb-5">
+                                    <i data-lucide="sparkles" class="w-8 h-8 text-blue-500"></i>
+                                </div>
+                                <p class="text-slate-500 mb-6 max-w-sm mx-auto text-sm">Belum ada laporan AI untuk proyek ini. Klik tombol di bawah untuk meminta AI menganalisis data Anda.</p>
+                                <button id="btn-generate-report" data-url="{% url 'survey:generate_report' project.id %}" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 flex items-center justify-center mx-auto transition-all shadow-md focus:ring-4 focus:ring-blue-100 font-semibold text-sm">
+                                    <i data-lucide="zap" class="w-4 h-4 mr-2 text-yellow-300"></i> Generate AI Report
+                                </button>
+                            </div>
+                        {% else %}
+                            <div id="has-report-state" class="flex flex-col h-full animate-fade-in-up">
+                                
+                                <div class="text-slate-700 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-sans text-justify line-clamp-3 mb-4">
+                                    {{ project.ai_report.report_text }}
+                                </div>
+                                
+                                <button id="btn-open-report-modal" class="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center transition-colors group/btn w-fit mb-6">
+                                    Tampilkan Detail Lengkap <i data-lucide="arrow-right" class="w-4 h-4 ml-1.5 transform group-hover/btn:translate-x-1 transition-transform"></i>
+                                </button>
+                                
+                                <div class="mt-auto pt-5 border-t border-slate-100 flex flex-wrap gap-3">
+                                    <a href="{% url 'survey:download_report' project.id %}" class="bg-emerald-600 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 inline-flex items-center text-sm font-medium shadow-sm transition-colors">
+                                        <i data-lucide="file-down" class="w-4 h-4 mr-2"></i> Unduh Word (.docx)
+                                    </a>
+                                    <button id="btn-generate-report" data-url="{% url 'survey:generate_report' project.id %}" class="bg-white border border-slate-300 text-slate-700 px-5 py-2.5 rounded-lg hover:bg-slate-50 hover:text-blue-600 inline-flex items-center text-sm font-medium shadow-sm transition-colors">
+                                        <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> Regenerate
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex flex-col h-full animate-fade-in-up delay-100 relative overflow-hidden">
+                    
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-70 pointer-events-none"></div>
+
+                    <div class="px-6 md:px-7 py-5 border-b border-slate-100 flex items-center mt-1 relative z-10">
+                        <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20">
+                                <i data-lucide="activity" class="w-5 h-5"></i>
+                            </div>
+                            Elevation Stats
+                        </h3>
+                    </div>
+
+                    <div class="p-6 flex flex-col gap-4 flex-grow justify-center relative z-10 bg-slate-50/30 rounded-b-2xl">
+                        
+                        <div class="group flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300 relative overflow-hidden cursor-default">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-bottom"></div>
+                            
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                    <i data-lucide="trending-up" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Max Elev</p>
+                                    <p class="text-xl font-black text-slate-800 font-mono leading-none">
+                                        <span class="count-up" data-target="{{max_elev|floatformat:2}}">0</span><span class="text-sm text-slate-400 font-medium ml-1">m</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="group flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all duration-300 relative overflow-hidden cursor-default">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-bottom"></div>
+                            
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors duration-300">
+                                    <i data-lucide="trending-down" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Min Elev</p>
+                                    <p class="text-xl font-black text-slate-800 font-mono leading-none">
+                                        <span class="count-up" data-target="{{min_elev|floatformat:2}}">0</span><span class="text-sm text-slate-400 font-medium ml-1">m</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="group flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all duration-300 relative overflow-hidden cursor-default">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 transform scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-bottom"></div>
+                            
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
+                                    <i data-lucide="ruler" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total Jarak</p>
+                                    <p class="text-xl font-black text-emerald-600 font-mono leading-none">
+                                        <span class="count-up" data-target="{{cumulative_dist|floatformat:2}}">0</span><span class="text-sm text-emerald-600/60 font-medium ml-1">m</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Graph -->
+            <div class="bg-white reveal-load animate-fade-in-up stagger-4 border border-border rounded-2xl p-6 shadow-sm hover-card transition-all duration-300">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-lg text-onSurfaceStrong flex items-center gap-2">
+                        <i data-lucide="line-chart" class="w-5 h-5 text-tertiary"></i> Longitudinal Profile
+                    </h3>
+                    <div class="flex gap-2">
+                        <button class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-onSurface/70 hover:text-primary"><i data-lucide="maximize" class="w-4 h-4"></i></button>
+                        <button class="p-2 hover:bg-slate-100 rounded-lg transition-colors text-onSurface/70 hover:text-primary"><i data-lucide="download" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                
+                <!-- Chart Container -->
+                <div id="elevationChart" class="w-full h-[450px] bg-slate-50/50 rounded-lg border border-dashed border-slate-200 relative overflow-hidden transition-all duration-500 hover:border-primary/30">
+                    <!-- Loading Skeleton -->
+                    <div id="chartLoading" class="absolute inset-0 flex items-center justify-center text-tertiary bg-white/80 z-10">
+                        <div class="flex flex-col items-center gap-2 animate-pulse">
+                            <i data-lucide="loader-2" class="w-8 h-8 animate-spin text-primary"></i>
+                            <span class="text-sm font-medium">Rendering Data...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+    
+
+            
+        </section>
+        
+        <section id="tab-raw" class="tab-content space-y-6">
+    
+            <div class="border-b border-border">
+                <nav class="flex gap-6 px-2" aria-label="Tabs">
+                    <button onclick="switchSubTab('edit')" id="btn-subtab-edit" class="py-3 px-2 text-sm font-bold border-b-2 border-primary text-primary transition-all">
+                        <i data-lucide="pencil-line" class="w-4 h-4 inline mr-1"></i> Edit Data (Raw)
+                    </button>
+                    <button onclick="switchSubTab('result')" id="btn-subtab-result" class="py-3 px-2 text-sm font-medium border-b-2 border-transparent text-tertiary hover:text-secondary transition-all">
+                        <i data-lucide="table-2" class="w-4 h-4 inline mr-1"></i> Processed Results
+                    </button>
+                </nav>
+            </div>
+
+            <div id="subtab-edit" class="block space-y-6 animate-fade-in-up">
+                
+                <div class="flex items-start gap-3 p-4 bg-warningBg border border-warning/30 rounded-xl text-yellow-800 shadow-sm">
+                    <div class="p-1 bg-warning/10 rounded-full"><i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0 text-warning animate-pulse"></i></div>
+                    <div>
+                        <h4 class="font-bold text-sm">Warning: Edit Mode</h4>
+                        <p class="text-sm opacity-90">Modifying raw data here will delete previous calculation results. You need to press the "Recalculate" button after finishing edits.</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+        
+                <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+                    
+                    <button onclick="document.getElementById('excelFileInput').click()" class="px-3 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 text-sm font-medium transition-all flex items-center gap-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i> Upload
+                    </button>
+                    <button onclick="openAddRowModal()" class="px-3 py-2 bg-primary text-white border border-primary rounded-lg hover:bg-primary/90 text-sm font-medium shadow-sm transition-all flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Row
+                    </button>
+
+                    <div class="hidden sm:block w-px h-6 bg-slate-200 mx-1"></div> 
+
+                    <button onclick="toggleGlobalEditMode()" id="btnGlobalEdit" class="px-3 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 text-sm font-medium transition-all flex items-center gap-2">
+                        <i data-lucide="pencil" class="w-4 h-4"></i> Edit All
+                    </button>
+                    <button onclick="saveAllRows()" id="btnSaveAll" class="hidden px-3 py-2 bg-emerald-600 text-white border border-emerald-600 rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-sm transition-all flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i> Save All
+                    </button>
+                    <button onclick="bulkDelete()" id="btnBulkDelete" class="px-3 py-2 bg-white text-slate-700 border border-slate-200 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" disabled>
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                    </button>
+
+                    <div class="hidden sm:block w-px h-6 bg-slate-200 mx-1"></div> 
+
+                    <button id="btn-analyze" class="px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 hover:shadow-md text-sm font-bold transition-all group flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4 group-hover:animate-pulse text-purple-600"></i> AI Anomaly Check
+                    </button>
+                </div> 
+
+                <div class="relative w-full xl:w-72 group">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-primary transition-colors"></i>
+                    <input type="text" placeholder="Search STA..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all text-sm">
+                </div>
+
+            </div>
+
+            <div id="ai-alert-container" class="hidden bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all">
+                
+                <div id="ai-loading" class="hidden items-center gap-3 text-purple-700 font-medium text-sm">
+                    <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> 
+                    <span>AI sedang mengevaluasi data ukur Anda...</span>
+                </div>
+
+                <div id="anomaly-summary" class="hidden text-sm">
+                    </div>
+            </div>
+
+                {% if project.survey_type == 'OPEN' %}
+                <div class="bg-white border border-border rounded-2xl shadow-sm overflow-hidden hover-card">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-sm text-center whitespace-nowrap border-collapse">
+                            <thead class="bg-surface text-tertiary text-xs uppercase font-semibold border-b border-border">
+                                <tr>
+                                    <th rowspan="2" class="px-4 py-3 w-10 border-r border-border bg-slate-50 sticky left-0 z-10">
+                                        <input type="checkbox" onclick="toggleSelectAll(this)" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                    </th>
+                                    <th rowspan="2" class="px-4 py-3 border-r border-border bg-slate-50">Station/Point</th>
+                                    
+                                    <th colspan="3" class="px-4 py-2 bg-blue-50/80 text-blue-800 border-r border-blue-200 border-b border-blue-100">
+                                        Backsight (BS)
+                                    </th>
+
+                                    <th colspan="3" class="px-4 py-2 bg-orange-50/80 text-orange-800 border-r border-orange-200 border-b border-orange-100">
+                                        Foresight (FS)
+                                    </th>
+
+                                    <th rowspan="2" class="px-4 py-3 bg-yellow-50/50 text-orange-800 border-r border-border">
+                                        Distance
+                                    </th>
+                                </tr>
+
+                                <tr class="text-[10px] text-tertiary">
+                                    <th class="px-2 py-1 min-w-[60px] bg-blue-50/30 text-blue-700 border-r border-blue-100">Top</th>
+                                    <th class="px-2 py-1 min-w-[60px] bg-blue-50/30 text-blue-900 font-bold border-r border-blue-100">Mid</th>
+                                    <th class="px-2 py-1 min-w-[60px] bg-blue-50/30 text-blue-700 border-r border-blue-200">Bot</th>
+
+                                    <th class="px-2 py-1 min-w-[60px] bg-orange-50/30 text-orange-700 border-r border-orange-100">Top</th>
+                                    <th class="px-2 py-1 min-w-[60px] bg-orange-50/30 text-orange-900 font-bold border-r border-orange-100">Mid</th>
+                                    <th class="px-2 py-1 min-w-[60px] bg-orange-50/30 text-orange-700 border-r border-orange-200">Bot</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="divide-y divide-border" id="rawTableBody">
+                                {% for raw in project.leveling_data.all %}
+                                <tr class="group hover:bg-slate-50 transition-colors raw-data-row" data-row-id="{{raw.id}}">
+                                    <td class="px-4 py-3 border-r border-border sticky left-0 bg-white group-hover:bg-slate-50 z-10">
+                                        <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary" value="{{raw.id}}" onchange="updateDeleteButton()">
+                                    </td>
+                                    
+                                    <td class="px-4 py-3 font-mono font-semibold text-onSurfaceStrong cell-station border-r border-border" data-val="{{raw.station}}">
+                                        {{raw.station}}
+                                    </td>
+                                    
+                                    {% if forloop.last %}
+                                        <td class="px-4 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-4 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-4 py-3 bg-gray-900 border-r border-gray-800 pointer-events-none"></td>
+                                    {% else %}
+                                        <td class="px-4 py-3 border-r border-dashed border-gray-200 cell-bs_top" data-val="{{ raw.bs_top|default:'' }}">{{ raw.bs_top|default:"-" }}</td>
+                                        <td class="px-4 py-3 font-bold text-primary bg-blue-50/5 border-r border-dashed border-gray-200 cell-bs_mid" data-val="{{raw.bs_mid|default:'' }}">{{raw.bs_mid|default:'-' }}</td>
+                                        <td class="px-4 py-3 border-r border-blue-100 cell-bs_bot" data-val="{{ raw.bs_bot|default:'' }}">{{ raw.bs_bot|default:"-" }}</td>
+                                    {% endif %}
+                                    
+                                    {% if forloop.first %}
+                                        <td class="px-4 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-4 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-4 py-3 bg-gray-900 border-r border-gray-800 pointer-events-none"></td>
+                                    {% else %}
+                                        <td class="px-4 py-3 text-tertiary border-r border-dashed border-gray-200 cell-fs_top" data-val="{{ raw.fs_top|default:'' }}">{{ raw.fs_top|default:"-" }}</td>
+                                        <td class="px-4 py-3 text-tertiary bg-orange-50/5 border-r border-dashed border-gray-200 cell-fs_mid" data-val="{{raw.fs_mid|default:'' }}">{{raw.fs_mid|default:'-' }}</td>
+                                        <td class="px-4 py-3 text-tertiary border-r border-orange-100 cell-fs_bot" data-val="{{ raw.fs_bot|default:'' }}">{{ raw.fs_bot|default:"-" }}</td>
+                                    {% endif %}
+                                    
+                                    {% if forloop.first %}
+                                        <td class="px-4 py-3 bg-gray-900 border-r border-gray-800 pointer-events-none"></td>
+                                    {% else %}
+                                        <td class="px-4 py-2 text-emerald-700 font-mono font-semibold border-r border-t-0 border-border cell-distance align-top bg-emerald-50/10" data-val="{{ raw.distance|default:'' }}">
+                                            <span class="block -mt-1 text-[9px] text-slate-400 font-sans font-normal leading-none mb-1">↑ from prev</span>
+                                            {{ raw.distance|default:"-" }}
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td class="px-4 py-12 border-r border-border bg-slate-50/50 sticky left-0 z-10"></td>
+                                    <td colspan="9" class="px-4 py-12 text-center text-slate-400 italic bg-slate-50/50">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <i data-lucide="table" class="w-8 h-8 opacity-50"></i>
+                                            <span>Belum ada data pengukuran. Klik "Add Row" untuk memulai.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="bg-white border border-border rounded-2xl shadow-sm overflow-hidden hover-card">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full min-w-max text-sm text-center whitespace-nowrap border-collapse">
+                            <thead class="bg-surface text-tertiary text-xs uppercase font-semibold border-b border-border">
+                                <tr>
+                                    <th rowspan="3" class="px-4 py-3 w-10 border-r border-border bg-slate-50 sticky left-0 z-10">
+                                        <input type="checkbox" onclick="toggleSelectAll(this)" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                    </th>
+                                    <th rowspan="3" class="px-4 py-3 border-r border-border bg-slate-50">Station/Point</th>
+                                    
+                                    <th colspan="6" class="px-4 py-2 bg-blue-50/80 text-blue-800 border-r border-blue-200 border-b border-blue-100">
+                                        Forward Run (Pergi)
+                                    </th>
+
+                                    <th colspan="6" class="px-4 py-2 bg-orange-50/80 text-orange-800 border-r border-orange-200 border-b border-orange-100">
+                                        Backward Run (Pulang)
+                                    </th>
+
+                                    <th colspan="2" class="px-4 py-2 bg-emerald-50/50 text-emerald-700 border-r border-border border-b border-emerald-100">
+                                        Distance (m)
+                                    </th>
+                                </tr>
+
+                                <tr>
+                                    <th colspan="3" class="px-2 py-1 text-[10px] bg-blue-50/30 text-blue-700 border-r border-blue-100">Backsight (BS)</th>
+                                    <th colspan="3" class="px-2 py-1 text-[10px] bg-blue-50/30 text-blue-700 border-r border-blue-200">Foresight (FS)</th>
+
+                                    <th colspan="3" class="px-2 py-1 text-[10px] bg-orange-50/30 text-orange-700 border-r border-orange-100">Backsight (BS)</th>
+                                    <th colspan="3" class="px-2 py-1 text-[10px] bg-orange-50/30 text-orange-700 border-r border-orange-200">Foresight (FS)</th>
+
+                                    <th rowspan="2" class="px-2 py-1 text-[10px] bg-blue-50/20 text-blue-800 border-r border-emerald-100">Fwd</th>
+                                    <th rowspan="2" class="px-2 py-1 text-[10px] bg-orange-50/20 text-orange-800 border-r border-border">Bwd</th>
+                                </tr>
+
+                                <tr class="text-[9px] text-tertiary">
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-dashed border-gray-200">Top</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-blue-50/20 font-bold text-blue-900 border-r border-dashed border-gray-200">Mid</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-blue-100">Low</th>
+                                    
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-dashed border-gray-200">Top</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-blue-50/20 font-bold text-blue-900 border-r border-dashed border-gray-200">Mid</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-blue-200">Low</th>
+
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-dashed border-gray-200">Top</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-orange-50/20 font-bold text-orange-900 border-r border-dashed border-gray-200">Mid</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-orange-100">Low</th>
+                                    
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-dashed border-gray-200">Top</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-orange-50/20 font-bold text-orange-900 border-r border-dashed border-gray-200">Mid</th>
+                                    <th class="px-2 py-1 min-w-[50px] bg-white border-r border-orange-200">Low</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="divide-y divide-border" id="rawTableBody">
+                                {% for raw in project.leveling_data.all %}
+                                <tr class="group hover:bg-slate-50 transition-colors raw-data-row" data-row-id="{{raw.id}}">
+                                    <td class="px-4 py-3 border-r border-border sticky left-0 bg-white group-hover:bg-slate-50 z-10">
+                                        <input type="checkbox" class="row-checkbox rounded border-gray-300 text-primary focus:ring-primary" value="{{raw.id}}" onchange="updateDeleteButton()">
+                                    </td>
+                                    
+                                    <td class="px-4 py-3 font-mono font-bold text-onSurfaceStrong cell-station border-r border-border bg-slate-50/30" data-val="{{raw.station}}">{{raw.station}}</td>
+                                    
+                                    {% if forloop.last %}
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-gray-800 pointer-events-none"></td>
+                                    {% else %}
+                                        <td class="px-2 py-3 text-xs text-tertiary cell-bs_top" data-val="{{ raw.bs_top|default:'' }}">{{ raw.bs_top|default:"-" }}</td>
+                                        <td class="px-2 py-3 font-bold text-blue-700 bg-blue-50/10 cell-bs_mid" data-val="{{raw.bs_mid}}">{{raw.bs_mid|default:0}}</td>
+                                        <td class="px-2 py-3 text-xs text-tertiary border-r border-blue-100 cell-bs_bot" data-val="{{ raw.bs_bot|default:'' }}">{{ raw.bs_bot|default:"-" }}</td>
+                                    {% endif %}
+                                    
+                                    {% if forloop.first %}
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-gray-800 pointer-events-none"></td>
+                                    {% else %}
+                                        <td class="px-2 py-3 text-xs text-tertiary cell-fs_top" data-val="{{ raw.fs_top|default:'' }}">{{ raw.fs_top|default:"-" }}</td>
+                                        <td class="px-2 py-3 font-bold text-blue-700 bg-blue-50/10 cell-fs_mid" data-val="{{raw.fs_mid}}">{{raw.fs_mid|default:0}}</td>
+                                        <td class="px-2 py-3 text-xs text-tertiary border-r border-blue-200 cell-fs_bot" data-val="{{ raw.fs_bot|default:'' }}">{{ raw.fs_bot|default:"-" }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-gray-800 pointer-events-none"></td>
+                                    {% else %}
+                                        <td class="px-2 py-3 text-xs text-tertiary cell-bwd_bs_top" data-val="{{ raw.bwd_bs_top|default:'' }}">{{ raw.bwd_bs_top|default:"-" }}</td>
+                                        <td class="px-2 py-3 font-bold text-orange-700 bg-orange-50/10 cell-bwd_bs_mid" data-val="{{raw.bwd_bs_mid|default:0}}">{{raw.bwd_bs_mid|default:0}}</td>
+                                        <td class="px-2 py-3 text-xs text-tertiary border-r border-orange-100 cell-bwd_bs_bot" data-val="{{ raw.bwd_bs_bot|default:'' }}">{{ raw.bwd_bs_bot|default:"-" }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.last %}
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-dashed border-gray-700 pointer-events-none"></td>
+                                        <td class="px-2 py-3 bg-gray-900 border-r border-gray-800 pointer-events-none"></td>
+                                    {% else %}
+                                        <td class="px-2 py-3 text-xs text-tertiary cell-bwd_fs_top" data-val="{{ raw.bwd_fs_top|default:'' }}">{{ raw.bwd_fs_top|default:"-" }}</td>
+                                        <td class="px-2 py-3 font-bold text-orange-700 bg-orange-50/10 cell-bwd_fs_mid" data-val="{{raw.bwd_fs_mid|default:0}}">{{raw.bwd_fs_mid|default:0}}</td>
+                                        <td class="px-2 py-3 text-xs text-tertiary border-r border-orange-200 cell-bwd_fs_bot" data-val="{{ raw.bwd_fs_bot|default:'' }}">{{ raw.bwd_fs_bot|default:"-" }}</td>
+                                    {% endif %}
+
+                                    <td class="px-2 py-3 font-mono text-emerald-600 bg-blue-50/5 border-r border-emerald-100 font-semibold cell-distance" data-val="{{ raw.distance|default:'' }}">
+                                        {{ raw.distance|default:"-" }}
+                                    </td>
+                                    <td class="px-2 py-3 font-mono text-emerald-600 bg-orange-50/5 border-r border-border font-semibold cell-distance_bwd" data-val="{{ raw.distance_bwd|default:'' }}">
+                                        {{ raw.distance_bwd|default:"-" }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td class="px-4 py-12 border-r border-border bg-slate-50/50 sticky left-0 z-10"></td>
+                                    <td colspan="16" class="px-4 py-12 text-center text-slate-400 italic bg-slate-50/50">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <i data-lucide="table" class="w-8 h-8 opacity-50"></i>
+                                            <span>Belum ada data pengukuran. Klik "Add Row" untuk memulai.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+
+            <div id="subtab-result" class="hidden space-y-6 animate-fade-in-up">
+                
+                <div class="bg-white border border-border rounded-2xl shadow-sm overflow-hidden hover-card">
+                    <div class="p-4 border-b border-border flex justify-between items-center bg-slate-50/50">
+                        <h3 class="font-bold text-onSurfaceStrong flex items-center gap-2">
+                            <i data-lucide="calculator" class="w-4 h-4 text-tertiary"></i> Processed Results Table
+                        </h3>
+                        <button onclick="exportHTMLTableToExcel('resultsTable', '{{ project.project_name|slugify }}_Results')" 
+                                class="text-xs font-semibold text-primary flex items-center gap-1 hover:underline hover:text-primaryHover transition-colors">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel
+                        </button>
+                    </div>
+
+                    {% if project.survey_type == 'OPEN' %}
+                    <div class="overflow-x-auto custom-scrollbar border-t border-slate-300">
+                        <table id="resultsTable" class="w-full text-sm text-center border-collapse whitespace-nowrap">
+                            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold border-b-2 border-slate-400">
+                                <tr>
+                                    <th rowspan="2" class="px-3 py-3 border border-slate-300 bg-slate-200 align-middle sticky left-0 z-10">
+                                        Station<br>(STA)/Point
+                                    </th>
+                                    <th colspan="2" class="px-2 py-2 border border-slate-300 bg-blue-50/80 text-blue-800">Backsight (BS)</th>
+                                    <th colspan="2" class="px-2 py-2 border border-slate-300 bg-orange-50/80 text-orange-800">Foresight (FS)</th>
+                                    <th rowspan="2" class="px-3 py-3 border border-slate-300 bg-slate-50 align-middle">Height<br>Diff (dH)</th>
+                                    <th colspan="2" class="px-2 py-2 border border-slate-300 bg-emerald-50/50 text-emerald-800">Distance (m)</th>
+                                    <th rowspan="2" class="px-3 py-3 border border-slate-300 bg-primary/5 text-primary align-middle">Elevation<br>(AMSL)</th>
+                                    <th rowspan="2" class="px-3 py-3 border border-slate-300 bg-slate-50 align-middle">Status</th>
+                                </tr>
+                                <tr class="text-[10px] bg-slate-50/50">
+                                    <th class="px-2 py-1 min-w-[50px] border border-slate-300 text-blue-800">Mid (BT)</th>
+                                    <th class="px-2 py-1 min-w-[50px] border border-slate-300 text-blue-700">Top (BA) / Bot (BB)</th>
+                                    <th class="px-2 py-1 min-w-[50px] border border-slate-300 text-orange-800">Mid (BT)</th>
+                                    <th class="px-2 py-1 min-w-[50px] border border-slate-300 text-orange-700">Top (BA) / Bot (BB)</th>
+                                    <th class="px-2 py-1 min-w-[60px] border border-slate-300 text-emerald-700">Segment</th>
+                                    <th class="px-2 py-1 min-w-[60px] border border-slate-300 text-emerald-700">Cumulative</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="text-slate-600">
+                                {% for result in results %}
+                                {% cycle 'bg-white' 'bg-slate-50/50' as row_bg silent %}
+                                
+                                <tr class="{{ row_bg }} hover:bg-slate-100 transition-colors duration-150">
+                                    <td rowspan="2" class="px-4 py-3 font-mono font-bold text-slate-700 border border-slate-300 align-middle sticky left-0 z-10 {{ row_bg }}">{{ result.station }}</td>
+
+                                    {% if forloop.last %}
+                                        <td rowspan="2" class="bg-gray-900 border border-slate-400"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                    {% else %}
+                                        <td rowspan="2" class="px-2 py-2 font-bold text-blue-700 bg-blue-50/30 border border-slate-300 align-middle font-mono">{{ result.backsight|floatformat:3 }}</td>
+                                        <td class="px-2 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bs_top|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td rowspan="2" class="bg-gray-900 border border-slate-400"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                    {% else %}
+                                        <td rowspan="2" class="px-2 py-2 font-bold text-orange-700 bg-orange-50/30 border border-slate-300 align-middle font-mono">{{ result.foresight|floatformat:3 }}</td>
+                                        <td class="px-2 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.fs_top|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td class="bg-gray-900 border border-slate-400 px-4 py-3"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-3"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-3"></td>
+                                    {% else %}
+                                        <td class="px-4 py-1 font-semibold text-slate-700 border border-t-0 border-slate-300 align-top font-mono bg-slate-50">
+                                            <span class="block -mt-4">{{ result.height_difference|floatformat:3 }}</span>
+                                        </td>
+                                        <td class="px-2 py-1 text-emerald-700 font-mono text-xs border border-t-0 border-slate-300 align-top bg-emerald-50/10">
+                                            <span class="block -mt-4">{{ result.distance|floatformat:3 }}</span>
+                                        </td>
+                                        <td class="px-2 py-1 text-emerald-800 font-mono text-xs font-semibold border border-t-0 border-slate-300 align-top bg-emerald-50/30">
+                                            <span class="block -mt-4">{{ result.cumulative_distance|floatformat:3 }}</span>
+                                        </td>
+                                    {% endif %}
+
+                                    <td rowspan="2" class="px-4 py-3 font-bold text-primary bg-primary/5 border border-slate-300 align-middle font-mono">{{ result.elevation|floatformat:3 }}</td>
+                                    <td rowspan="2" class="px-4 py-3 border border-slate-300 align-middle">
+                                        {% if result.status == 'RISE' %}
+                                        <span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-xs font-bold inline-flex items-center gap-1">Rise</span>
+                                        {% elif result.status == 'FALL' %}
+                                        <span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full text-xs font-bold inline-flex items-center gap-1">Fall</span>
+                                        {% else %}
+                                        <span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-xs font-bold inline-flex items-center gap-1">{{ result.status|default:"-" }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+
+                                <tr class="{{ row_bg }} hover:bg-slate-100 transition-colors duration-150">
+                                    
+                                    {% if forloop.last %}
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                    {% else %}
+                                        <td class="px-2 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bs_bot|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                    {% else %}
+                                        <td class="px-2 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.fs_bot|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.last %}
+                                        <td class="bg-gray-900 border border-slate-400 px-4 py-3"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-3"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-3"></td>
+                                    {% else %}
+                                        <td class="border border-b-0 border-slate-300 bg-slate-50 px-4 py-3"></td>
+                                        <td class="border border-b-0 border-slate-300 bg-emerald-50/10 px-2 py-3"></td>
+                                        <td class="border border-b-0 border-slate-300 bg-emerald-50/30 px-2 py-3"></td>
+                                    {% endif %}
+
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% else %}
+                    <div class="overflow-x-auto custom-scrollbar border-t border-slate-300">
+                        <table id="resultsTable" class="w-full text-sm text-center border-collapse whitespace-nowrap">
+                            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold border-b-2 border-slate-400">
+                                <tr>
+                                    <th rowspan="3" class="px-3 py-3 border border-slate-300 bg-slate-200 align-middle sticky left-0 z-10">Station/<br>Point</th>
+                                    <th colspan="4" class="px-2 py-2 border border-slate-300 bg-blue-100/50 text-blue-800">Forward Run</th>
+                                    <th colspan="4" class="px-2 py-2 border border-slate-300 bg-orange-100/50 text-orange-800">Backward Run</th>
+                                    <th colspan="3" class="px-2 py-2 border border-slate-300 bg-emerald-50/80 text-emerald-800">Distance (m)</th>
+                                    <th colspan="3" class="px-2 py-2 border border-slate-300 bg-slate-50 text-slate-800">Height Diff. (dH)</th>
+                                    <th rowspan="3" class="px-3 py-3 border border-slate-300 bg-yellow-50 text-yellow-800 align-middle">Corr.</th>
+                                    <th rowspan="3" class="px-3 py-3 border border-slate-300 bg-primary/5 text-primary align-middle">Elevation<br>(AMSL)</th>
+                                    <th rowspan="3" class="px-3 py-3 border border-slate-300 bg-slate-50 align-middle">Status</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="2" class="px-1 py-1 border border-slate-300 bg-blue-50/50 text-[10px] text-blue-800">Backsight (BS)</th>
+                                    <th colspan="2" class="px-1 py-1 border border-slate-300 bg-blue-50/50 text-[10px] text-blue-800">Foresight (FS)</th>
+                                    <th colspan="2" class="px-1 py-1 border border-slate-300 bg-orange-50/50 text-[10px] text-orange-800">Backsight (BS)</th>
+                                    <th colspan="2" class="px-1 py-1 border border-slate-300 bg-orange-50/50 text-[10px] text-orange-800">Foresight (FS)</th>
+                                    <th rowspan="2" class="px-2 py-1 border border-slate-300 bg-emerald-50/30 text-[10px] text-emerald-700">D. fwd</th>
+                                    <th rowspan="2" class="px-2 py-1 border border-slate-300 bg-emerald-50/30 text-[10px] text-emerald-700">D. bwd</th>
+                                    <th rowspan="2" class="px-2 py-1 border border-slate-300 bg-emerald-100/50 text-[10px] text-emerald-800 font-bold">Avg</th>
+                                    <th rowspan="2" class="px-2 py-1 border border-slate-300 bg-slate-50 text-[10px] text-slate-600">Fwd</th>
+                                    <th rowspan="2" class="px-2 py-1 border border-slate-300 bg-slate-50 text-[10px] text-slate-600">Bwd</th>
+                                    <th rowspan="2" class="px-2 py-1 border border-slate-300 bg-slate-100 text-[10px] text-slate-800 font-bold">Avg</th>
+                                </tr>
+                                <tr class="text-[10px] bg-white">
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-blue-800">Mid</th>
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-blue-600">Top/Bot</th>
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-blue-800">Mid</th>
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-blue-600">Top/Bot</th>
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-orange-800">Mid</th>
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-orange-600">Top/Bot</th>
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-orange-800">Mid</th>
+                                    <th class="px-2 py-1 min-w-[40px] border border-slate-300 text-orange-600">Top/Bot</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="text-slate-600">
+                                {% for result in results %}
+                                {% cycle 'bg-white' 'bg-slate-50/50' as row_bg silent %}
+                                
+                                <tr class="{{ row_bg }} hover:bg-slate-100 transition-colors duration-150 group">
+                                    <td rowspan="2" class="px-3 py-3 font-bold font-mono text-slate-700 border border-slate-300 align-middle sticky left-0 z-10 {{ row_bg }}">{{ result.station }}</td>
+
+                                    {% if forloop.last %}
+                                        <td rowspan="2" class="bg-gray-900 border border-slate-400"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td rowspan="2" class="px-1 py-2 font-bold text-blue-700 bg-blue-50/30 border border-slate-300 align-middle font-mono">{{ result.backsight|default:0|floatformat:3 }}</td>
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bs_top|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td rowspan="2" class="bg-gray-900 border border-slate-400"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td rowspan="2" class="px-1 py-2 font-bold text-blue-700 bg-blue-50/30 border border-slate-300 align-middle font-mono">{{ result.foresight|default:0|floatformat:3 }}</td>
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.fs_top|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td rowspan="2" class="bg-gray-900 border border-slate-400"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td rowspan="2" class="px-1 py-2 font-bold text-orange-700 bg-orange-50/30 border border-slate-300 align-middle font-mono">{{ result.bwd_backsight|default:0|floatformat:3 }}</td>
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bwd_bs_top|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.last %}
+                                        <td rowspan="2" class="bg-gray-900 border border-slate-400"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td rowspan="2" class="px-1 py-2 font-bold text-orange-700 bg-orange-50/30 border border-slate-300 align-middle font-mono">{{ result.bwd_foresight|default:0|floatformat:3 }}</td>
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bwd_fs_top|default:"-" }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                    {% else %}
+                                        <td class="px-2 py-1 text-emerald-700 font-mono text-xs border border-t-0 border-slate-300 bg-emerald-50/10 align-top">
+                                            <span class="block -mt-1">{{ result.distance|floatformat:2 }}</span>
+                                        </td>
+                                        <td class="px-2 py-1 text-emerald-700 font-mono text-xs border border-t-0 border-slate-300 bg-emerald-50/10 align-top">
+                                            <span class="block -mt-1">{{ result.distance_bwd|floatformat:2 }}</span>
+                                        </td>
+                                        <td class="px-2 py-1 text-emerald-800 font-mono text-xs font-bold border border-t-0 border-slate-300 bg-emerald-100/30 align-top">
+                                            <span class="block -mt-1">{{ result.distance_avg|floatformat:2 }}</span>
+                                        </td>
+                                        <td class="px-2 py-1 text-slate-600 font-mono border border-t-0 border-slate-300 bg-slate-50 align-top">
+                                            <span class="block -mt-1">{{ result.height_difference|floatformat:3 }}</span>
+                                        </td>
+                                        <td class="px-2 py-1 text-slate-600 font-mono border border-t-0 border-slate-300 bg-slate-50 align-top">
+                                            <span class="block -mt-1">{{ result.height_difference_bwd|floatformat:3 }}</span>
+                                        </td>
+                                        <td class="px-2 py-1 font-bold text-slate-800 font-mono bg-slate-100 border border-t-0 border-slate-300 align-top">
+                                            <span class="block -mt-1">{{ result.height_difference_avg|floatformat:3 }}</span>
+                                        </td>
+                                    {% endif %}
+
+                                    <td rowspan="2" class="px-2 py-2 text-xs font-mono text-yellow-700 bg-yellow-50/30 border border-slate-300 align-middle">{{ result.correction|default:"0.000"|floatformat:3 }}</td>
+                                    <td rowspan="2" class="px-3 py-2 font-bold text-primary bg-primary/5 border border-slate-300 align-middle font-mono">{{ result.elevation|floatformat:3 }}</td>
+                                    <td rowspan="2" class="px-3 py-2 border border-slate-300 align-middle">
+                                        {% if result.status == 'RISE' %}
+                                        <span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">Rise</span>
+                                        {% elif result.status == 'FALL' %}
+                                        <span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">Fall</span>
+                                        {% else %}
+                                        <span class="bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">{{ result.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+
+                                <tr class="{{ row_bg }} hover:bg-slate-100 transition-colors duration-150 group">
+                                    
+                                    {% if forloop.last %}
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bs_bot|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.fs_bot|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.first %}
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bwd_bs_bot|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.last %}
+                                        <td class="bg-gray-900 border border-slate-400 px-1 py-2"></td>
+                                    {% else %}
+                                        <td class="px-1 py-2 text-xs text-slate-500 border border-slate-300 font-mono">{{ result.bwd_fs_bot|default:"-"|floatformat:3 }}</td>
+                                    {% endif %}
+
+                                    {% if forloop.last %}
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                        <td class="bg-gray-900 border border-slate-400 px-2 py-2"></td>
+                                    {% else %}
+                                        <td class="border border-b-0 border-slate-300 bg-emerald-50/10 px-2 py-3"></td>
+                                        <td class="border border-b-0 border-slate-300 bg-emerald-50/10 px-2 py-3"></td>
+                                        <td class="border border-b-0 border-slate-300 bg-emerald-100/30 px-2 py-3"></td>
+                                        <td class="border border-b-0 border-slate-300 bg-slate-50 px-2 py-3"></td>
+                                        <td class="border border-b-0 border-slate-300 bg-slate-50 px-2 py-3"></td>
+                                        <td class="border border-b-0 border-slate-300 bg-slate-100 px-2 py-3"></td>
+                                    {% endif %}
+
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="bg-slate-100 font-bold text-xs border-t-2 border-slate-400">
+                                <tr>
+                                    <td class="px-3 py-3 font-bold text-slate-800 border border-slate-300 sticky left-0 z-10 bg-slate-100">TOTAL</td>
+                                    <td colspan="10" class="bg-slate-50/50 border border-slate-300"></td>
+                                    <td class="px-2 py-2 font-bold text-emerald-800 bg-emerald-100/50 border border-slate-300 font-mono">{{ cumulative_dist|floatformat:3 }}</td>
+                                    <td colspan="2" class="bg-slate-50/50 border border-slate-300"></td>
+                                    <td class="px-2 py-2 font-bold text-slate-800 bg-slate-200 border border-slate-300 font-mono">{{ h_avg_total|floatformat:3 }} </td>
+                                    <td class="px-2 py-2 font-bold text-yellow-800 bg-yellow-100 border border-slate-300 font-mono">{{ corr_total|floatformat:3 }} </td>
+                                    <td colspan="2" class="bg-slate-50/50 border border-slate-300"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </section>
+
+
+
+            <section id="tab-Cross" class="tab-content space-y-6">
+                
+                <div class="border-b border-border">
+                    <nav class="flex gap-6 px-2" aria-label="Tabs">
+                        <button onclick="switchCsSubTab('edit')" id="btn-subtab-cs-edit" class="py-3 px-2 text-sm font-bold border-b-2 border-primary text-primary transition-all">
+                            <i data-lucide="pencil-line" class="w-4 h-4 inline mr-1"></i> Edit Data (CS)
+                        </button>
+                        <button onclick="switchCsSubTab('result')" id="btn-subtab-cs-result" class="py-3 px-2 text-sm font-medium border-b-2 border-transparent text-tertiary hover:text-secondary transition-all">
+                            <i data-lucide="table-2" class="w-4 h-4 inline mr-1"></i> Processed Results
+                        </button>
+                    </nav>
+                </div>
+
+                <div id="subtab-cs-edit" class="block space-y-6 animate-fade-in-up">
+                    
+                    <div class="flex items-start gap-3 p-4 bg-warningBg border border-warning/30 rounded-xl text-yellow-800 shadow-sm">
+                        <div class="p-1 bg-warning/10 rounded-full"><i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0 text-warning"></i></div>
+                        <div>
+                            <h4 class="font-bold text-sm">Warning: Edit Mode</h4>
+                            <p class="text-sm opacity-90">Modifying raw data here will require recalculation.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
+                        <div class="flex gap-2 w-full sm:w-auto flex-wrap">
+                            <button onclick="createCrossSection(this)" class="group flex items-center gap-2 px-5 py-2.5 bg-white border border-border text-onSurfaceStrong hover:text-primary rounded-lg font-semibold shadow-sm transition-all transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
+                                <i data-lucide="layers" class="w-4 h-4"></i> Generate CS Default
+                            </button>
+
+                            <button onclick="document.getElementById('cs-excel-upload').click()" class="group flex items-center gap-2 px-5 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 rounded-lg font-semibold shadow-sm transition-all transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Upload Excel
+                            </button>
+                            
+                            <input type="file" id="cs-excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleCSExcelUpload(event)">
+
+                            <a href="/static/survey/template_cs.xlsx" download class="group flex items-center gap-2 px-3 py-2.5 text-tertiary hover:text-primary rounded-lg font-medium transition-all text-sm">
+                                <i data-lucide="download" class="w-4 h-4"></i> Template
+                            </a>
+                        </div>
+                        
+                        <div class="flex gap-2 w-full sm:w-auto justify-end">
+                            <button onclick="saveAndRecalculateCS()" id="btnSaveRecalculateCS" class="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 hover:bg-primaryHover transition-all transform active:scale-95 flex items-center justify-center gap-2 w-full sm:w-auto">
+                                <i data-lucide="save" class="w-4 h-4"></i> 
+                                SAVE & RECALCULATE
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4" id="accordion-container">
+                        
+                        {% regroup c_section by station as station_groups %}
+                        
+                        {% for group in station_groups %}
+                        <div class="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+                            
+                            <button onclick="toggleAccordion('acc-{{ group.grouper.id }}')" class="w-full flex justify-between items-center p-4 bg-surface hover:bg-slate-50 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="map-pin" class="w-5 h-5 text-primary"></i>
+                                    <span class="font-bold text-lg text-onSurfaceStrong">STA {{ group.grouper.station }}</span>
+                                    <span class="text-sm text-tertiary bg-slate-100 px-2 py-1 rounded-md">Elev: {{ group.grouper.elevation|floatformat:3|default:"-" }} AMSL</span>
+                                </div>
+                                <i data-lucide="chevron-down" id="icon-acc-{{ group.grouper.id }}" class="w-5 h-5 text-tertiary transition-transform duration-300"></i>
+                            </button>
+
+                            <div id="acc-{{ group.grouper.id }}" class="hidden border-t border-border">
+                                <div class="p-4">
+                                    
+                                    <div class="overflow-x-auto rounded-lg border border-border mb-4">
+                                        <table class="w-full text-sm text-center whitespace-nowrap" id="table-sta-{{ group.grouper.id }}">
+                                            <thead class="bg-slate-50 border-b border-border text-tertiary text-xs uppercase">
+                                                <tr>
+                                                    <th rowspan="2" class="px-4 py-2 border-r border-border align-middle">Label Titik</th>
+                                                    <th rowspan="2" class="px-4 py-2 border-r border-border align-middle">Jarak (m)</th>
+                                                    <th colspan="3" class="px-4 py-2 border-r border-border border-b border-border bg-blue-50/30 text-blue-800">Readings (Benang)</th>
+                                                    <th rowspan="2" class="px-4 py-2 align-middle">Aksi</th>
+                                                </tr>
+                                                <tr class="text-[10px]">
+                                                    <th class="px-2 py-1 border-r border-border bg-white text-tertiary">Top</th>
+                                                    <th class="px-2 py-1 border-r border-border bg-blue-50/50 text-blue-900 font-bold">Mid</th>
+                                                    <th class="px-2 py-1 border-r border-border bg-white text-tertiary">Bot</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="text-slate-600">
+                                                {% for row in group.list %}
+                                                <tr id="row-point-{{ row.id }}" class="border-b border-border/50 hover:bg-slate-50 cs-data-row" data-row-id="{{ row.id }}">
+                                                    
+                                                    <td class="px-2 py-1 border-r border-border">
+                                                        <input type="text" class="cs-input-label w-full bg-transparent border-transparent hover:bg-white focus:bg-white focus:ring-1 focus:ring-primary focus:border-primary rounded text-center text-tertiary font-semibold text-sm transition-all" value="{{ row.label }}">
+                                                    </td>
+                                                    
+                                                    <td class="px-2 py-1 border-r border-border bg-emerald-50/5 ">
+                                                        <input type="number" step="0.01" class="cs-input-dist  w-full bg-transparent border-transparent hover:bg-white focus:bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded text-center text-emerald-700 font-mono font-semibold text-sm transition-all" value="{{ row.distance|default:0 }}">
+                                                    </td>
+                                                    
+                                                    <td class="px-2 py-1 border-r border-dashed border-gray-200">
+                                                        <input type="number" step="0.001" class="cs-input-top w-full bg-transparent border-transparent hover:bg-white focus:bg-white focus:ring-1 focus:ring-blue-400 focus:border-blue-400 rounded text-center text-tertiary font-mono text-xs transition-all" value="{{ row.top|default:0 }}">
+                                                    </td>
+                                                    
+                                                    <td class="px-2 py-1 border-r border-dashed border-gray-200 bg-blue-50/10">
+                                                        <input type="number" step="0.001" class="cs-input-mid w-full bg-transparent border-transparent hover:bg-white focus:bg-white focus:ring-1 focus:ring-blue-600 focus:border-blue-600 rounded text-center text-blue-700 font-mono font-bold text-sm transition-all" value="{{ row.mid|default:0 }}">
+                                                    </td>
+                                                    
+                                                    <td class="px-2 py-1 border-r border-border">
+                                                        <input type="number" step="0.001" class="cs-input-bot w-full bg-transparent border-transparent hover:bg-white focus:bg-white focus:ring-1 focus:ring-blue-400 focus:border-blue-400 rounded text-center text-tertiary font-mono text-xs transition-all" value="{{ row.bot|default:0  }}">
+                                                    </td>
+                                                    
+                                                    <td class="px-4 py-1">
+                                                        <button onclick="deletePoint({{ row.id }})" class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Hapus Titik">
+                                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-3 rounded-lg border border-border">
+                                        <div class="flex flex-wrap gap-2 w-full lg:w-auto flex-1">
+                                            <div class="flex-1 min-w-[120px]">
+                                                <input type="text" id="input-label-{{ group.grouper.id }}" class="w-full px-2 py-1.5 text-sm border border-border rounded-md focus:border-primary outline-none" placeholder="Label">
+                                            </div>
+                                            <div class="w-24 min-w-[80px]">
+                                                <input type="number" step="0.01" id="input-dist-{{ group.grouper.id }}" class="w-full px-2 py-1.5 text-sm border border-border rounded-md focus:border-emerald-500 outline-none bg-emerald-50/30" placeholder="Jarak" >
+                                            </div>
+                                            <div class="w-24 min-w-[80px]">
+                                                <input type="number" step="0.001" id="input-top-{{ group.grouper.id }}" class="w-full px-2 py-1.5 text-sm border border-border rounded-md focus:border-primary outline-none" placeholder="Top">
+                                            </div>
+                                            <div class="w-24 min-w-[80px]">
+                                                <input type="number" step="0.001" id="input-mid-{{ group.grouper.id }}" class="w-full px-2 py-1.5 text-sm border border-blue-300 rounded-md focus:border-blue-600 outline-none bg-blue-50 text-blue-900 font-semibold" placeholder="Mid">
+                                            </div> 
+                                            <div class="w-24 min-w-[80px]">
+                                                <input type="number" step="0.001" id="input-bot-{{ group.grouper.id }}" class="w-full px-2 py-1.5 text-sm border border-border rounded-md focus:border-primary outline-none" placeholder="Bot">
+                                            </div>
+                                        </div>
+                                        <button onclick="addPoint({{ group.grouper.id }})" class="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-md text-sm font-semibold transition-colors mt-2 lg:mt-0">
+                                            <i data-lucide="plus" class="w-4 h-4"></i> Add
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="bg-white border border-border rounded-xl p-8 text-center text-slate-400 italic shadow-sm">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <i data-lucide="layers" class="w-8 h-8 opacity-50"></i>
+                                <span>Belum ada data Cross Section. Silakan tekan tombol "Generate CS Default" atau upload data.</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+
+
+                <div id="subtab-cs-result" class="hidden space-y-6 animate-fade-in-up">
+                    
+                    <div class="bg-white reveal-load animate-fade-in-up stagger-4 border border-border rounded-2xl mt-5 shadow-sm overflow-hidden hover-card">
+                        <div class="p-4 border-b border-border flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-bold text-onSurfaceStrong flex items-center gap-2">
+                                <i data-lucide="list" class="w-4 h-4 text-tertiary"></i> Processed Results Table
+                            </h3>
+                            <button onclick="exportHTMLTableToExcel('resultsTable', '{{ project.project_name|slugify }}_Results')" 
+                                    class="text-xs font-semibold text-primary flex items-center gap-1 hover:underline hover:text-primaryHover transition-colors">
+                                <i data-lucide="file-spreadsheet" class="w-3 h-3"></i> Export Excel (Direct)
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto custom-scrollbar shadow-md rounded-lg border-4 border-slate-500 mb-8">
+                            <table id="resultsTable" class="w-full text-sm text-center border-collapse whitespace-nowrap">
+                                
+                                <thead class="bg-slate-200 text-slate-800 text-xs uppercase font-bold border-b-4 border-slate-500">
+                                    <tr>
+                                        <th rowspan="2" class="px-3 py-3 border-2 border-slate-400 align-middle w-16 bg-slate-300">
+                                            No 
+                                        </th>
+                                        <th rowspan="2" class="px-3 py-3 border-2 border-slate-400 align-middle">
+                                            Station/<br>Point
+                                        </th>
+                                        <th colspan="2" class="px-2 py-2 border-2 border-slate-400 bg-blue-100 text-blue-900">
+                                            Benang (Readings)
+                                        </th>
+                                        <th rowspan="2" class="px-3 py-2 border-2 border-slate-400 bg-orange-100 text-orange-900 align-middle">
+                                            Height Diff.<br>(dH)
+                                        </th>
+                                        <th rowspan="2" class="px-3 py-2 border-2 border-slate-400 bg-slate-100 text-slate-900 align-middle">
+                                            Elevation<br>(AMSL)
+                                        </th>
+                                        <th rowspan="2" class="px-3 py-2 border-2 border-slate-400 bg-emerald-100 text-emerald-900 align-middle">
+                                            Distance
+                                        </th>
+                                    </tr>
+                                    <tr class="text-[10px] bg-slate-100">
+                                        <th class="px-2 py-1 min-w-[50px] border-2 border-slate-400 text-blue-900">Mid (BT)</th>
+                                        <th class="px-2 py-1 min-w-[50px] border-2 border-slate-400 text-blue-800">Top (BA) / Bot (BB)</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody class="text-slate-700">
+                                    {% regroup c_section by station as station_list %}
+                                    
+                                    {% for group in station_list %}
+                                        
+                                        {% cycle 'bg-white' 'bg-slate-50' as row_bg silent %} 
+                                        
+                                        {% for cs in group.list %}
+                                        <tr class="{{ row_bg }} transition-colors duration-150 hover:bg-slate-100">
+
+                                            {% if forloop.first %}
+                                                {% with pts=group.list|length %}
+                                                <td rowspan="{{ pts|add:pts }}" class="px-3 py-2 border-2 border-slate-400 font-bold text-lg text-slate-800 bg-slate-200 align-middle shadow-inner">
+                                                    {{ forloop.parentloop.counter }}
+                                                </td>
+                                                {% endwith %}
+                                            {% endif %}
+
+                                            <td rowspan="2" class="px-3 py-3 border-2 border-slate-400 font-bold font-mono text-slate-900 align-middle">
+                                                {{cs.label}}
+                                            </td>
+                                            
+                                            <td rowspan="2" class="px-2 py-2 border-2 border-slate-400 font-bold text-blue-700 font-mono align-middle bg-blue-50/50">
+                                                {{cs.mid|floatformat:3}}
+                                            </td>
+                                            
+                                            <td class="px-2 py-2 border-2 border-slate-400 text-xs text-slate-500 font-mono">
+                                                {{cs.top|floatformat:3}}
+                                            </td>
+                                            
+                                            {% if forloop.first %}
+                                                <td class="px-2 py-2 bg-black border-2 border-slate-600"></td>
+                                            {% else %}
+                                                <td class="px-2 py-2 border-2 border-t-0 border-slate-400 text-orange-700 font-mono font-bold align-top bg-orange-50">
+                                                    <span class="block -mt-5">{{cs.height_difference|floatformat:3}}</span>
+                                                </td>
+                                            {% endif %}
+
+                                            <td rowspan="2" class="px-3 py-2 border-2 border-slate-400 font-bold text-slate-900 font-mono align-middle">
+                                                {{cs.elevation|floatformat:3}}
+                                            </td>
+
+                                            <td rowspan="2" class="px-2 py-2 border-2 border-slate-400 text-emerald-700 font-mono text-xs font-bold align-middle bg-emerald-50/50">
+                                                {{cs.distance|floatformat:3}}
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr class="{{ row_bg }} transition-colors duration-150 hover:bg-slate-100">
+
+                                            <td class="px-2 py-2 border-2 border-slate-400 text-xs text-slate-500 font-mono">
+                                                {{cs.bot|floatformat:3}}
+                                            </td>
+                                            
+                                            {% if forloop.last %}
+                                                <td class="px-2 py-2 bg-black border-2 border-slate-600"></td>
+                                            {% else %}
+                                                <td class="px-2 py-2 border-2 border-b-0 border-slate-400 bg-orange-50"></td>
+                                            {% endif %}
+
+                                        </tr>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </tbody>
+
+                                <tfoot class="bg-slate-200 font-bold text-sm border-t-4 border-slate-500">
+                                    <tr>
+                                        <td colspan="2" class="px-3 py-4 border-2 border-slate-400 text-right pr-4 text-slate-800 uppercase">
+                                            Total Keseluruhan
+                                        </td>
+                                        
+                                        <td colspan="2" class="bg-slate-100 border-2 border-slate-400"></td>
+                                        
+                                        <td class="px-2 py-2 text-slate-900 bg-slate-300 border-2 border-slate-400 font-mono text-base">
+                                            +0.460
+                                        </td>
+                                        
+                                        <td class="bg-slate-100 border-2 border-slate-400"></td>
+                                        
+                                        <td class="px-2 py-2 text-emerald-800 font-mono bg-emerald-200 border-2 border-slate-400 text-base">
+                                            80.00
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                                
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+
+
+        
+        
+        
+        
+        
+
+        <!-- IV. TAB 3: CUT & FILL CALCULATION -->
+        <section id="tab-cutfill" class="tab-content space-y-6">
+           
+    
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-errorBg border border-error/20 rounded-xl p-5 hover-card cursor-default">
+                    <p class="text-xs font-bold text-error uppercase mb-1 flex items-center gap-1">
+                        <i data-lucide="arrow-down-circle" class="w-3 h-3"></i> Total Cut (Galian)
+                    </p>
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <span id="summary_total_cut">{{total_cut|default:"0.00"|floatformat:2}}</span> <span class="text-sm text-gray-500 font-medium">m³</span>
+                    </h3>
+                </div>
+                
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 hover-card cursor-default">
+                    <p class="text-xs font-bold text-emerald-700 uppercase mb-1 flex items-center gap-1">
+                        <i data-lucide="arrow-up-circle" class="w-3 h-3"></i> Total Fill (Timbunan)
+                    </p>
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <span id="summary_total_fill">{{total_fill|default:"0.00"|floatformat:2}}</span> <span class="text-sm text-gray-500 font-medium">m³</span>
+                    </h3>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 hover-card cursor-default">
+                    <p class="text-xs font-bold text-blue-700 uppercase mb-1 flex items-center gap-1">
+                        <i data-lucide="scale" class="w-3 h-3"></i> Net Balance
+                    </p>
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <span id="summary_net_volume">{{net_balance|default:"0.00"|floatformat:2}}</span> <span class="text-sm text-gray-500 font-medium">m³</span>
+                    </h3>
+                </div>
+            </div>
+
+            <div class="bg-white border border-border rounded-2xl p-6 shadow-sm mb-6">
+                <h4 class="font-bold text-sm text-onSurfaceStrong mb-4 flex items-center gap-2">
+                    <i data-lucide="layout-template" class="w-4 h-4 text-primary"></i> Road Template & Design Configuration
+                </h4>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    
+                    <div class="bg-blue-50/40 p-4 rounded-xl border border-blue-100 space-y-3">
+                        <label class="block text-xs font-bold text-blue-800 uppercase flex items-center gap-1.5">
+                            <i data-lucide="train-track" class="w-3.5 h-3.5"></i> Main Lane
+                        </label>
+                        <div class="flex gap-3">
+                            <div class="w-1/2">
+                                <label class="block text-[10px] text-tertiary mb-1">Width (Lebar)</label>
+                                <div class="relative">
+                                    <input type="number" id="input_lane_width" value="3.5" step="0.1" class="w-full pl-3 pr-8 py-2 rounded-lg border border-border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-bold text-sm text-onSurfaceStrong bg-white shadow-sm transition-all">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tertiary font-bold">m</span>
+                                </div>
+                            </div>
+                            <div class="w-1/2">
+                                <label class="block text-[10px] text-tertiary mb-1">Slope (Miring)</label>
+                                <div class="relative">
+                                    <input type="number" id="input_lane_slope" value="-2.0" step="0.1" class="w-full pl-3 pr-8 py-2 rounded-lg border border-border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-bold text-sm text-onSurfaceStrong bg-white shadow-sm transition-all">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tertiary font-bold">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-orange-50/40 p-4 rounded-xl border border-orange-100 space-y-3">
+                        <label class="block text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5">
+                            <i data-lucide="navigation-2" class="w-3.5 h-3.5"></i> Shoulder
+                        </label>
+                        <div class="flex gap-3">
+                            <div class="w-1/2">
+                                <label class="block text-[10px] text-tertiary mb-1">Width (Lebar)</label>
+                                <div class="relative">
+                                    <input type="number" id="input_shoulder_width" value="1.5" step="0.1" class="w-full pl-3 pr-8 py-2 rounded-lg border border-border focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-bold text-sm text-onSurfaceStrong bg-white shadow-sm transition-all">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tertiary font-bold">m</span>
+                                </div>
+                            </div>
+                            <div class="w-1/2">
+                                <label class="block text-[10px] text-tertiary mb-1">Slope (Miring)</label>
+                                <div class="relative">
+                                    <input type="number" id="input_shoulder_slope" value="-4.0" step="0.1" class="w-full pl-3 pr-8 py-2 rounded-lg border border-border focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-bold text-sm text-onSurfaceStrong bg-white shadow-sm transition-all">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-tertiary font-bold">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 h-full flex flex-col justify-between">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                                <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Auto Slope Generator
+                            </label>
+                            <p class="text-[10px] text-tertiary mt-1">Generate elevasi AS jalan dari STA awal ke akhir.</p>
+                        </div>
+                        
+                        <div class="flex gap-2 items-center">
+                            <input type="number" id="gen_start_elev" placeholder="Start Elev" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-slate-500 shadow-sm font-semibold">
+                            <span class="text-tertiary"><i data-lucide="arrow-right" class="w-4 h-4"></i></span>
+                            <input type="number" id="gen_end_elev" placeholder="End Elev" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-slate-500 shadow-sm font-semibold">
+                        </div>
+                        
+                        <button onclick="generateSlope()" class="w-full mt-1 bg-slate-800 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors shadow-md flex items-center justify-center gap-2 transform active:scale-95">
+                            <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Generate
+                        </button>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+                
+                <div class="p-4 border-b border-border bg-slate-50 flex justify-between items-center sticky top-0 z-10">
+                    
+                    <h3 class="font-bold text-onSurfaceStrong flex items-center gap-2">
+                        <i data-lucide="table" class="w-4 h-4 text-tertiary"></i> 
+                        Design Table
+                    </h3>
+
+                    <div class="flex items-center gap-4">
+                        <button onclick="exportHTMLTableToExcel('resultsTable_cutfill', '{{ project.project_name|slugify }}_Results')" 
+                                class="text-xs font-semibold text-primary flex items-center hover:underline hover:text-primaryHover transition-colors gap-2">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> 
+                            Export Excel
+                        </button>
+
+                        <button onclick="saveAndCalculateVolume()" id="btnSaveVol" 
+                                class="bg-primary text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 hover:bg-primaryHover transition-all transform active:scale-95 flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> 
+                            SAVE & CALCULATE
+                        </button>
+                    </div>
+
+                </div>
+               
+
+                <div class="overflow-x-auto max-h-[600px] custom-scrollbar">
+                    <table id="resultsTable_cutfill" class="w-full text-sm text-left relative">
+                        <thead class="bg-surface text-tertiary text-xs uppercase sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th class="px-3 py-2 bg-slate-50 border-b">Station/Point</th>
+                                <th class="px-3 py-2 bg-slate-50 border-b">Tanah Asli (m)</th>
+                                <th class="px-3 py-2 bg-blue-50 text-blue-800 border-b-2 border-blue-200 w-48">
+                                    Design Elev (m) <i data-lucide="edit-3" class="w-3 h-3 inline ml-1"></i>
+                                </th>
+                                <th class="px-3 py-2 bg-slate-50 text-center border-b">Volume Cut (m³)</th>
+                                <th class="px-3 py-2 bg-slate-50 text-center border-b">Volume Fill (m³)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border" id="designTableBody">
+                            {% for row in results %}
+                                
+                                {% if forloop.first %}
+                                    <tr class="hover:bg-blue-50/10 transition-colors design-row h-10" data-id="{{row.id}}">
+                                        
+                                        <td rowspan="2" class="px-3 py-1 font-mono text-onSurfaceStrong font-semibold border-b border-slate-300 bg-white align-middle">{{row.station}}</td>
+                                        <td rowspan="2" class="px-3 py-1 text-slate-500 border-b border-slate-300 bg-white align-middle">{{row.elevation|floatformat:3}}</td>
+                                        <td rowspan="2" class="px-3 py-1 border-b border-slate-300 bg-white align-middle">
+                                            <input type="number" step="0.001" 
+                                                class="input-design w-full px-2 py-1 border border-blue-200 rounded-md text-blue-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder-blue-200 bg-white"
+                                                value="{{ row.design_elevation|default:'' }}" 
+                                                placeholder="...">
+                                        </td>
+                                        
+                                        <td class="bg-gray-800 border-none p-0"></td>
+                                        <td class="bg-gray-800 border-none p-0"></td>
+                                    </tr>
+
+                                {% else %}
+                                    <tr class="h-10">
+                                        <td rowspan="2" class="px-3 py-1 text-center align-middle text-error font-mono font-bold bg-error/5 border-b border-slate-300">
+                                            {{ row.cut_volume|default:"0.00"|floatformat:2 }}
+                                        </td>
+                                        <td rowspan="2" class="px-3 py-1 text-center align-middle text-emerald-600 font-mono font-bold bg-emerald-50 border-b border-slate-300">
+                                            {{ row.fill_volume|default:"0.00"|floatformat:2 }}
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-blue-50/10 transition-colors design-row h-10" data-id="{{row.id}}">
+                                        <td rowspan="2" class="px-3 py-1 font-mono text-onSurfaceStrong font-semibold border-b border-slate-300 bg-white align-middle">{{row.station}}</td>
+                                        <td rowspan="2" class="px-3 py-1 text-slate-500 border-b border-slate-300 bg-white align-middle">{{row.elevation|floatformat:3}}</td>
+                                        <td rowspan="2" class="px-3 py-1 border-b border-slate-300 bg-white align-middle">
+                                            <input type="number" step="0.001" 
+                                                class="input-design w-full px-2 py-1 border border-blue-200 rounded-md text-blue-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder-blue-200 bg-white"
+                                                value="{{ row.design_elevation|default:'' }}" 
+                                                placeholder="...">
+                                        </td>
+                                    </tr>
+                                {% endif %}
+
+                                {% if forloop.last %}
+                                    <tr class="h-10">
+                                        <td class="bg-gray-800 border-none p-0"></td>
+                                        <td class="bg-gray-800 border-none p-0"></td>
+                                    </tr>
+                                {% endif %}
+
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="tab-autocad" class="tab-content hidden space-y-6">
+            
+            <div class="bg-white border border-border rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                        <i data-lucide="monitor-dot" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-onSurfaceStrong">AutoCAD DXF Generator</h3>
+                        <p class="text-sm text-tertiary mt-1">Konversi data hitungan menjadi gambar teknik (.dxf) lengkap dengan kop dan skala terukur.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white border border-border rounded-2xl p-6 shadow-sm mb-6">
+                <h4 class="font-bold text-sm text-onSurfaceStrong mb-4 flex items-center gap-2">
+                    <i data-lucide="settings-2" class="w-4 h-4 text-primary"></i> Drawing & Layout Configuration
+                </h4>
+                
+                <form id="form-export-dxf" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    
+                    <div class="bg-blue-50/40 p-4 rounded-xl border border-blue-100 space-y-4 h-full">
+                        <label class="block text-xs font-bold text-blue-800 uppercase flex items-center gap-1.5">
+                            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> Data & Grafik
+                        </label>
+                        
+                        <div>
+                            <label class="block text-[10px] text-tertiary mb-1 font-bold">PILIH GRAFIK</label>
+                            <select id="dxf-grafik" name="grafik" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm font-semibold text-onSurfaceStrong bg-white cursor-pointer outline-none">
+                                <option value="long_section">Long Section (Potongan Memanjang)</option>
+                                <option value="cross_section">Cross Section (Potongan Melintang)</option>
+                                <option value="cutfill_long">Cut Fill - Long Section</option>
+                                <option value="cutfill_cross">Cut Fill - Cross Section</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] text-tertiary mb-1 font-bold">DARI STA</label>
+                                <select id="dxf-sta-start" name="sta_start" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm font-semibold text-onSurfaceStrong bg-white cursor-pointer outline-none">
+                                    <option value="">Loading...</option>
+                                    </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-tertiary mb-1 font-bold">SAMPAI STA</label>
+                                <select id="dxf-sta-end" name="sta_end" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm font-semibold text-onSurfaceStrong bg-white cursor-pointer outline-none">
+                                    <option value="">Loading...</option>
+                                    </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4 h-full">
+                        <label class="block text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                            <i data-lucide="maximize" class="w-3.5 h-3.5"></i> Skala & Dimensi
+                        </label>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] text-tertiary mb-1 font-bold">SKALA X (H)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-tertiary font-bold">1:</span>
+                                    <input type="number" id="dxf-skala-x" name="skala_x" value="1000" class="w-full pl-7 pr-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-slate-500 shadow-sm font-semibold text-onSurfaceStrong bg-white outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-tertiary mb-1 font-bold">SKALA Y (V)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-tertiary font-bold">1:</span>
+                                    <input type="number" id="dxf-skala-y" name="skala_y" value="100" class="w-full pl-7 pr-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-slate-500 shadow-sm font-semibold text-onSurfaceStrong bg-white outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] text-tertiary mb-1 font-bold">SATUAN (UNITS)</label>
+                            <select id="dxf-units" name="units" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-slate-500 shadow-sm font-semibold text-onSurfaceStrong bg-white cursor-pointer outline-none">
+                                <option value="m">Meter (m)</option>
+                                <option value="cm">Centimeter (cm)</option>
+                                <option value="mm">Millimeter (mm)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] text-tertiary mb-1 font-bold">DATUM ELEVASI</label>
+                            <div class="flex gap-2">
+                                <select id="dxf-datum-type" name="datum_type" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-slate-500 shadow-sm font-semibold text-onSurfaceStrong bg-white cursor-pointer outline-none transition-all">
+                                    <option value="auto">Otomatis (Lowest - 2m)</option>
+                                    <option value="manual">Manual Input</option>
+                                </select>
+                                <input type="number" step="0.001" id="dxf-datum-value" name="datum_value" placeholder="Elevasi" class="w-1/2 px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-slate-500 shadow-sm font-semibold text-onSurfaceStrong bg-white outline-none hidden transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-orange-50/40 p-4 rounded-xl border border-orange-100 space-y-4 h-full">
+                        <label class="block text-xs font-bold text-orange-800 uppercase flex items-center gap-1.5">
+                            <i data-lucide="layout" class="w-3.5 h-3.5"></i> Layout & Kop Kertas
+                        </label>
+                        
+                        <div>
+                            <label class="block text-[10px] text-tertiary mb-1 font-bold">UKURAN KERTAS</label>
+                            <select id="dxf-paper" name="paper_size" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-orange-500 shadow-sm font-semibold text-onSurfaceStrong bg-white cursor-pointer outline-none">
+                                <option value="A3">A3 (420 x 297 mm)</option>
+                                <option value="A4">A4 (297 x 210 mm)</option>
+                                <option value="A2">A2 (594 x 420 mm)</option>
+                                <option value="A1">A1 (841 x 594 mm)</option>
+                                <option value="A0">A0 (1189 x 841 mm)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] text-tertiary mb-1 font-bold">TIPE KOP SURAT / TITLE BLOCK</label>
+                            <select id="dxf-kop-type" name="kop_type" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-orange-500 shadow-sm font-semibold text-onSurfaceStrong bg-white cursor-pointer outline-none mb-2">
+                                <option value="default">Kop Default Civilix</option>
+                                <option value="none">Tanpa Kop (Hanya Grafik)</option>
+                                <option value="custom">Upload Kop Sendiri (.dwg/.dxf)</option>
+                            </select>
+                            
+                            <div id="dxf-kop-upload-container" class="hidden">
+                                <input type="file" id="dxf-custom-kop" name="custom_kop" accept=".dwg, .dxf" class="w-full text-xs text-tertiary file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200 cursor-pointer">
+                                <p class="text-[9px] text-tertiary mt-1">*Pastikan blok atribut sesuai format sistem.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-border bg-slate-50 flex justify-between items-center">
+                    
+                    <h3 class="font-bold text-onSurfaceStrong flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-tertiary"></i> 
+                        Ready to Process
+                    </h3>
+
+                    <div class="flex items-center gap-4">
+                        <button type="button" onclick="switchTab('tab-cutfill')" class="text-xs font-semibold text-tertiary hover:text-onSurfaceStrong transition-colors">
+                            Batal
+                        </button>
+
+                        <button type="button" id="btn-generate-dxf" class="bg-primary text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 hover:bg-primaryHover transition-all transform active:scale-95 flex items-center gap-2">
+                            <i data-lucide="pen-tool" class="w-4 h-4"></i> 
+                            <span id="text-generate-dxf">GENERATE .DXF</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+        <!-- V. TAB 4: PROJECT SETTINGS -->
+        <section id="tab-settings" class="tab-content max-w-2xl mx-auto space-y-8">
+    
+            <div class="bg-white border border-border rounded-2xl p-8 shadow-sm hover-card transition-all animate-fade-in-up stagger-1">
+                <h3 class="text-xl font-bold text-onSurfaceStrong mb-6 flex items-center gap-2">
+                    <i data-lucide="info" class="w-5 h-5 text-primary"></i> Project Information
+                </h3>
+                <form id="updateProjectForm" class="space-y-5" onsubmit="event.preventDefault(); updateProjectDetails();">
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-onSurfaceStrong mb-1">Project Name</label>
+                        <input type="text" id="setting_project_name" value="{{ project.project_name }}" class="w-full px-4 py-2.5 rounded-lg border border-border focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-onSurfaceStrong mb-1">Initial Elevation (BM)</label>
+                        <div class="relative">
+                            <input type="number" step="0.001" id="setting_initial_elevation" value="{{ project.initial_elevation }}" class="w-full pl-4 pr-12 py-2.5 rounded-lg border border-border focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm font-mono font-bold text-gray-700">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-tertiary font-medium">m</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Mengubah nilai ini akan mempengaruhi seluruh elevasi hasil perhitungan saat tombol "Process" ditekan.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-onSurfaceStrong mb-1">Description / Purpose</label>
+                        <textarea id="setting_purpose" rows="3" class="w-full px-4 py-2.5 rounded-lg border border-border focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm">{{ project.purpose }}</textarea>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" id="btnUpdateProject" class="px-6 py-2.5 bg-primary hover:bg-primaryHover text-white font-bold rounded-lg shadow-lg transition-all transform active:scale-95 flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            
+
+            <!-- Danger Zone -->
+            <div class="bg-errorBg/30 border border-error/20 rounded-2xl p-8 hover:bg-errorBg/50 transition-colors animate-fade-in-up stagger-2">
+                <h3 class="text-lg font-bold text-error mb-2 flex items-center gap-2">
+                    <i data-lucide="alert-octagon" class="w-5 h-5"></i> Danger Zone
+                </h3>
+                <p class="text-sm text-onSurface mb-6">Deleting this project is permanent. All measurement data, calculations, and AI reports will be lost.</p>
+                
+                <div class="flex flex-col sm:flex-row items-center justify-between p-4 bg-white border border-error/20 rounded-lg gap-4">
+                    <div class="text-center sm:text-left">
+                        <p class="font-bold text-sm text-onSurfaceStrong">Delete This Project</p>
+                        <p class="text-xs text-onSurface">This action cannot be undone.</p>
+                    </div>
+                    
+                    
+                    <button onclick="deleteProjectApi('{{project.id}}',this)" class="px-4 py-2 bg-error text-white text-sm font-bold rounded-lg hover:bg-red-700 shadow-lg shadow-error/20 transition-all transform hover:scale-105 active:scale-95">
+                        Delete Permanently
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    
+</div>
+
+<div id="addRowModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm" onclick="closeAddRowModal()"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 relative z-10">
+        <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm border border-gray-200">
+            
+            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i data-lucide="layers" class="h-6 w-6 text-teal-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                        <h3 class="text-base font-semibold leading-6 text-gray-900" id="modal-title">Tambah Baris Data</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500 mb-4">Berapa banyak stasiun/baris kosong yang ingin Anda tambahkan?</p>
+                            
+                            <div class="relative">
+                                <label for="rowCountInput" class="block text-xs font-medium text-gray-700 mb-1">Jumlah Baris</label>
+                                <input type="number" id="rowCountInput" min="1" value="1" max="50" 
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3 border font-bold text-gray-900">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-100">
+                <button type="button" onclick="submitAddRows()" class="inline-flex w-full justify-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 sm:ml-3 sm:w-auto transition-colors">
+                    Tambah Sekarang
+                </button>
+                <button type="button" onclick="closeAddRowModal()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto transition-colors">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<form id="excelUploadForm" method="POST" enctype="multipart/form-data" 
+    action="{% url 'survey:upload_raw_data_excel' project_id=project.id %}" style="display:none;">
+    {% csrf_token %}
+    <input type="file" name="excel_file" id="excelFileInput" accept=".xlsx, .xls">
+</form>
+
+<div id="report-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0 overflow-hidden">
+        
+        <div id="report-modal-overlay" class="fixed inset-0 transition-opacity bg-gray-900/75 backdrop-blur-sm" aria-hidden="true"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full animate-fade-in-up">
+            
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-emerald-400 z-20"></div>
+
+            <div class="bg-gray-50/80 border-b border-gray-100 px-6 md:px-8 py-4 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm">
+                <h4 class="text-lg font-bold text-gray-800 flex items-center" id="modal-title">
+                    <i data-lucide="file-text" class="w-5 h-5 mr-2.5 text-blue-500"></i>
+                    AI Analysis Result - Full Report
+                </h4>
+                <button id="btn-close-report-modal" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 md:p-8 max-h-[70vh] overflow-y-auto bg-white">
+                <div class="text-gray-700 text-sm md:text-base leading-loose whitespace-pre-wrap font-sans text-justify">
+                    {{ project.ai_report.report_text }}
+                </div>
+            </div>
+
+            <div class="bg-gray-50/80 border-t border-gray-100 px-6 md:px-8 py-4 flex flex-wrap gap-3 sticky bottom-0 z-10 backdrop-blur-sm">
+                <a href="{% url 'survey:download_report' project.id %}" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 inline-flex items-center text-sm font-medium shadow-sm transition-all focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                    <i data-lucide="file-down" class="w-4 h-4 mr-2"></i> Download as Word (.docx)
+                </a>
+                <button id="btn-close-report-modal-footer" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 inline-flex items-center text-sm font-medium transition-all">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+{% block extra_js %}
+{% load static %} 
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const PROJECT_CONFIG = {
+            id: "{{ project.id }}",
+            csrfToken: document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken'),
+            urls: {
+                toggleStatus: "{% url 'survey:api_toggle_status' project_id=project.id %}",
+                updateProject: "{% url 'survey:api_update_project' project_id=project.id %}",
+                deleteProject: "{% url 'survey:api_delete_project' project_id=0 %}",
+                chartData: "{% url 'survey:api_get_chart_data' project_id=project.id %}",
+                saveDesign: "{% url 'survey:api_calculate_cutfill' project_id=project.id %}",
+                bulkUpdate: "{% url 'survey:api_update_thread' project_id=project.id %}",
+                bulkUpdateCS: "{% url 'survey:api_update_c_section' project_id=project.id %}",
+                bulkDelete: "{% url 'survey:api_bulk_delete' project_id=project.id %}",
+                addRows: "{% url 'survey:api_add_rows' project_id=project.id %}",
+                createCSection: "{% url 'survey:create_c_section' project_id=project.id %}",
+                redirectIndex: "{% url 'survey:index' %}",
+                calculate_CS: "{% url 'survey:api_calculate_CS' project_id=project.id%}",
+                calculate: "{% url 'survey:api_calculate' project_id=project.id%}",
+                getStationList: "{% url 'survey:api_get_sta_list' project_id=project.id%}",
+                exportDxfAdvanced: "{% url 'survey:api_export_dxf_advanced' project_id=project.id%}",
+                uploadExcel_CS: "{% url 'survey:api_upload_cs_excel' project_id=project.id %}"
+            }
+        };
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="{% static 'survey/js/excel_export.js' %}"></script>
+    <script src="{% static 'survey/js/ui-interactions.js' %}"></script>
+    
+    <script src="{% static 'survey/js/project-api.js' %}"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'survey/js/table-manager.js' %}"></script>
+    <script src="{% static 'survey/js/calculations.js' %}"></script>
+    <script src="{% static 'survey/js/charts.js' %}"></script>
+
+    {% comment %} <script>
+        function toggleProjectStatus() {
+            const projectId = "{{ project.id }}";
+            const btn = document.getElementById('statusBadge');
+            
+            // Efek Loading sementara
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            fetch(`/survey/api/toggle-status/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Reload halaman untuk memperbarui tampilan UI secara menyeluruh
+                    // (Cara paling aman agar semua warna/ikon terupdate otomatis dari server)
+                    window.location.reload(); 
+                } else {
+                    alert("Gagal mengubah status: " + data.message);
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Terjadi kesalahan sistem.");
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+        }
+    </script>
+
+    <script>
+        function updateProjectDetails() {
+            const projectId = "{{ project.id }}";
+            const btn = document.getElementById('btnUpdateProject');
+            const originalContent = btn.innerHTML;
+
+            // Ambil data dari input
+            const data = {
+                project_name: document.getElementById('setting_project_name').value,
+                initial_elevation: document.getElementById('setting_initial_elevation').value,
+                purpose: document.getElementById('setting_purpose').value
+            };
+
+            // Loading State
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
+            lucide.createIcons();
+
+            // Kirim ke Backend
+            fetch(`/survey/api/update-project/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Project updated successfully!');
+                    // Opsional: Reload halaman agar nama di header berubah
+                    window.location.reload(); 
+                } else {
+                    alert('Error: ' + data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                    lucide.createIcons();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update settings.');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                lucide.createIcons();
+            });
+        }
+    </script>
+
+    <script>
+        // --- FITUR 1: SAVE & CALCULATE ---
+        function saveAndCalculateVolume() {
+            const projectId = "{{ project.id }}";
+            const globalWidth = document.getElementById('global_road_width').value;
+            
+            // 1. Ambil semua baris data
+            const rows = document.querySelectorAll('.design-row');
+            const payload = [];
+            let hasInput = false;
+
+            // 2. Loop setiap baris tabel untuk ambil input user
+            rows.forEach(row => {
+                const rowId = row.getAttribute('data-id');
+                const designInput = row.querySelector('.input-design').value;
+                
+                // Masukkan ke payload (meskipun kosong, tetap kirim agar bisa dihapus di DB jika user menghapus)
+                payload.push({
+                    id: rowId,
+                    design_elevation: designInput ? parseFloat(designInput) : null,
+                    width: parseFloat(globalWidth) // Kita kirim lebar global ke setiap baris
+                });
+
+                if (designInput) hasInput = true;
+            });
+
+            if (!hasInput) {
+                alert("Mohon isi 'Design Elevation' setidaknya pada satu stasiun.");
+                return;
+            }
+
+            // 3. UI Loading
+            const btn = document.getElementById('btnSaveVol');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Calculating...';
+            lucide.createIcons();
+
+            // 4. Kirim ke Backend (Python)
+            // Pastikan URL ini sesuai dengan urls.py nanti: path('api/save-design-data/<int:project_id>/', ...)
+            fetch(`/survey/api/save-design-data/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update UI Angka Summary (Optional, kalau mau realtime tanpa reload)
+                    // document.getElementById('summary_total_cut').innerText = data.total_cut;
+                    
+                    alert(`Perhitungan Selesai!\n\nTotal Cut: ${data.total_cut} m3\nTotal Fill: ${data.total_fill} m3`);
+                    
+                    // Reload halaman agar tabel terisi angka volume terbaru dari database
+                    window.location.reload();
+                } else {
+                    alert("Error: " + data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    lucide.createIcons();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Gagal menghubungi server.");
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                lucide.createIcons();
+            });
+        }
+
+        // --- FITUR 2: AUTO SLOPE GENERATOR (Helper) ---
+        function generateSlope() {
+            const startElev = parseFloat(document.getElementById('gen_start_elev').value);
+            const endElev = parseFloat(document.getElementById('gen_end_elev').value);
+            const inputs = document.querySelectorAll('.input-design');
+            
+            if (isNaN(startElev) || isNaN(endElev)) {
+                alert("Isi Elevasi Awal dan Akhir dulu!");
+                return;
+            }
+
+            const totalPoints = inputs.length;
+            if (totalPoints < 2) return;
+
+            // Rumus Interpolasi Linear: y = mx + c
+            // Tapi sederhananya: Bagi selisih tinggi dengan jumlah segmen
+            const step = (endElev - startElev) / (totalPoints - 1);
+
+            inputs.forEach((input, index) => {
+                // Hitung nilai per baris
+                const val = startElev + (step * index);
+                input.value = val.toFixed(3); // Set nilai ke input box
+            });
+
+            alert("Tabel otomatis terisi! Klik 'Save & Calculate' untuk memproses volume.");
+        }
+    </script>
+
+
+    <script>
+        // ... (fungsi toggleEditRow dan lain-lain) ...
+
+        function deleteProjectApi(projectId, buttonElement) {
+            // 1. Konfirmasi dari pengguna
+            if (!confirm("are you sure to delete this project?")) {
+                return;
+            }
+
+            // 2. Buat URL API secara dinamis
+            const url = `{% url 'survey:api_delete_project' project_id=0 %}`.replace('0', projectId);
+
+            // 3. Tampilkan Loading (UX)
+            const originalHtml = buttonElement.innerHTML;
+            buttonElement.disabled = true;
+            buttonElement.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>';
+            lucide.createIcons();
+
+            // 4. Kirim Request ke Django
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}', // Wajib untuk keamanan Django
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || 'fail to delte the project.');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message); // Menampilkan pesan sukses dari server
+                    window.location.href = "{% url 'survey:index' %}"; // Perintah untuk redirect!
+                } else {
+                    throw new Error(data.message || 'Respon sukses tapi status error.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Gagal menghapus data: " + error.message);
+                
+                // Kembalikan tombol ke kondisi awal jika gagal
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = originalHtml;
+                lucide.createIcons();
+            });
+        }
+    </script>
+
+    <script>
+        // --- 1. LOGIC BULK DELETE ---
+        
+        function toggleSelectAll(source) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateDeleteButton();
+        }
+
+        function updateDeleteButton() {
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            const btn = document.getElementById('btnBulkDelete');
+            
+            if (checkedCount > 0) {
+                btn.disabled = false
+                btn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4 inline mr-1"></i> Delete (${checkedCount})`;
+                lucide.createIcons();
+            } else {
+                btn.disabled = true
+            }
+        }
+
+        function bulkDelete() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const ids = Array.from(checkedBoxes).map(cb => cb.value);
+            const projectId = "{{ project.id }}";
+
+            if (ids.length === 0) return;
+            if (!confirm(`Yakin hapus ${ids.length} data terpilih?`)) return;
+
+            fetch(`/survey/api/bulk-delete/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Success:' + data.message);
+                    window.location.reload()
+                } else {
+                    alert("Gagal: " + data.message);
+                }
+            });
+        }
+
+
+        // --- 2. LOGIC BULK EDIT (EDIT ALL) ---
+
+        let isEditMode = false;
+
+        function toggleGlobalEditMode() {
+            const rows = document.querySelectorAll('.raw-data-row');
+            const btnEdit = document.getElementById('btnGlobalEdit');
+            const btnSave = document.getElementById('btnSaveAll');
+            
+            isEditMode = !isEditMode; // Toggle status
+
+            if (isEditMode) {
+                // -- MASUK MODE EDIT --
+                btnEdit.innerHTML = '<i data-lucide="x" class="w-4 h-4 inline mr-1"></i> Cancel';
+                btnSave.classList.remove('hidden');
+                
+                rows.forEach(row => {
+                    // Ubah Station jadi Input
+                    const stationCell = row.querySelector('.cell-station');
+                    stationCell.innerHTML = `<input type="text" class="w-20 px-2 py-1 border rounded text-xs" value="${stationCell.dataset.val}">`;
+
+                    // Ubah Angka-angka jadi Input
+                    ['bs_top', 'bs_mid', 'bs_bot', 'fs_top', 'fs_mid', 'fs_bot', 'distance'].forEach(field => {
+                        const cell = row.querySelector(`.cell-${field}`);
+                        // Ambil nilai asli dari data-val, bukan textContent yg mungkin ada "-"
+                        const val = cell.dataset.val; 
+                        cell.innerHTML = `<input type="number" step="0.001" class="w-16 px-1 py-1 border rounded text-xs" value="${val}">`;
+                    });
+                });
+
+            } else {
+                // -- BATAL / KELUAR MODE EDIT --
+                // Refresh halaman saja cara paling aman untuk reset tampilan
+                window.location.reload();
+            }
+            lucide.createIcons();
+        }
+
+        function saveAllRows() {
+            const rows = document.querySelectorAll('.raw-data-row');
+            const projectId = "{{ project.id }}";
+            let payload = [];
+
+            // Loop setiap baris dan ambil value dari input
+            rows.forEach(row => {
+                const rowId = row.dataset.rowId;
+                let rowData = { id: rowId };
+                
+                // Ambil value dari input yang ada di dalam cell
+                const getVal = (field) => {
+                    const input = row.querySelector(`.cell-${field} input`);
+                    return input ? input.value : '';
+                };
+
+                rowData.station = getVal('station');
+                rowData.bs_top = getVal('bs_top');
+                rowData.bs_mid = getVal('bs_mid');
+                rowData.bs_bot = getVal('bs_bot');
+                rowData.fs_top = getVal('fs_top');
+                rowData.fs_mid = getVal('fs_mid');
+                rowData.fs_bot = getVal('fs_bot');
+                rowData.distance = getVal('distance');
+
+                payload.push(rowData);
+            });
+
+            // Tampilkan loading di tombol
+            const btnSave = document.getElementById('btnSaveAll');
+            const originalText = btnSave.innerHTML;
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 inline mr-1"></i> Saving...';
+            lucide.createIcons();
+
+            // Kirim ke Backend
+            fetch(`/survey/api/bulk-update/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert(data.message);
+                    window.location.reload();
+                    
+                } else {
+                    alert("Gagal menyimpan: " + data.message);
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = originalText;
+                    lucide.createIcons();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Terjadi kesalahan sistem.");
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalText;
+                lucide.createIcons();
+            });
+        }
+    </script>
+
+    <script>
+        // 1. Initialize Icons
+        lucide.createIcons();
+
+        // 2. Number Counting Animation
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                
+                // Format number: 2 decimal places
+                const value = (progress * (end - start) + start).toFixed(3); 
+                // Note: Cut & Fill usually uses 2 decimals, Elevations 3. 
+                // For simplicity we do standard formatting:
+                
+                // Only format if end has decimals
+                const hasDecimals = end % 1 != 0;
+                obj.innerHTML = hasDecimals ? parseFloat(value).toFixed(end.toString().split('.')[1]?.length || 2) : Math.floor(value);
+                
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function triggerCountUp(context = document) {
+            context.querySelectorAll('.count-up').forEach(el => {
+                const target = parseFloat(el.getAttribute('data-target'));
+                animateValue(el, 0, target, 1500); // 1.5s duration
+            });
+        }
+
+        // 3. Tab Switching Logic with Animation
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+                // Reset animation classes to re-trigger them later if needed
+                const children = el.querySelectorAll('.animate-fade-in-up');
+                children.forEach(child => {
+                    child.style.animation = 'none';
+                    child.offsetHeight; /* trigger reflow */
+                    child.style.animation = null; 
+                });
+            });
+            
+            // Deactivate all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Activate clicked button
+            const clickedBtn = event.currentTarget;
+            clickedBtn.classList.add('active');
+
+            // Show target content with clean animation
+            const target = document.getElementById(tabId);
+            target.classList.add('active');
+            
+            // Force reflow to restart animation for tab content
+            // Note: Since we use stagger classes inside, simply showing block triggers them if they were hidden
+            
+            // Trigger Number animation if moving to relevant tabs
+            if(tabId === 'tab-analysis' || tabId === 'tab-cutfill') {
+                setTimeout(() => triggerCountUp(target), 100);
+            }
+            
+            // If Chart tab, resize Plotly to ensure it fits
+            if(tabId === 'tab-analysis') {
+                setTimeout(() => {
+                    Plotly.Plots.resize('elevationChart');
+                }, 100);
+            }
+        }
+
+        // 4. Mock Process Animation
+        function runProcessAnimation() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('animate-spin');
+            
+            // Simulate processing
+            setTimeout(() => {
+                icon.classList.remove('animate-spin');
+                // Re-trigger number animation on current visible tab
+                const activeTab = document.querySelector('.tab-content.active');
+                if(activeTab) triggerCountUp(activeTab);
+            }, 1000);
+        }
+
+        // 5. Initialize Plotly Chart
+        
+        async function initChart() {
+            const loadingIndicator = document.getElementById('chartLoading');
+            // const projectId = "{{ project.id }}"; // Tidak perlu jika URL sudah dirender
+            // Pastikan URL di-render dengan benar oleh Django di template Anda
+            const url = `{% url 'survey:api_get_chart_data' project_id=project.id %}`;
+
+            // Default Data (Skeleton/Placeholder)
+            let chartData = {
+                x: [0, 50, 100, 150],
+                yGround: [100, 102, 98, 101],
+                yDesign: [100, 100, 100, 100],
+                labels: ['0+000', '0+050', '0+100', '0+150']
+            };
+
+            try {
+                const response = await fetch(url);
+                const resJson = await response.json();
+
+                if (resJson.status === 'success' && resJson.data.distances.length > 0) {
+                    const d = resJson.data;
+                    // Kita gunakan data mentah dulu, nanti diolah
+                    chartData.x = d.distances;
+                    chartData.yGround = d.elevations;
+                    // Handle null design elevations by falling back to ground
+                    chartData.yDesign = d.design_elevations.map((val, i) => val !== null ? val : d.elevations[i]);
+                    chartData.labels = d.stations;
+                }
+            } catch (error) {
+                console.error("Chart Data Error:", error);
+                // Bisa tambahkan alert atau penanganan error visual di sini jika perlu
+            }
+
+            // --- FUNGSI BANTU UNTUK MENCARI TITIK POTONG ---
+            // Menghitung titik potong antara dua segmen garis
+            function findIntersection(x1, y1_g, y1_d, x2, y2_g, y2_d) {
+                // Gradien garis Ground (m_g) dan Design (m_d)
+                const m_g = (y2_g - y1_g) / (x2 - x1);
+                const m_d = (y2_d - y1_d) / (x2 - x1);
+
+                if (m_g === m_d) return null; // Garis sejajar, tidak ada perpotongan
+
+                // Rumus mencari x di mana kedua garis bertemu:
+                // y_g = y1_g + m_g * (x - x1)
+                // y_d = y1_d + m_d * (x - x1)
+                // Saat berpotongan, y_g = y_d. Dengan sedikit aljabar, kita dapatkan:
+                const x_intersect = x1 + (y1_g - y1_d) / (m_d - m_g);
+
+                // Cek apakah titik potong ada di DALAM segmen [x1, x2]
+                // Gunakan sedikit toleransi (epsilon) untuk mengatasi ketidaktepatan floating point
+                const epsilon = 1e-5;
+                if (x_intersect > x1 + epsilon && x_intersect < x2 - epsilon) {
+                    // Hitung nilai y di titik potong tersebut
+                    const y_intersect = y1_g + m_g * (x_intersect - x1);
+                    return { x: x_intersect, y: y_intersect };
+                }
+                return null;
+            }
+
+            // --- PROSES DATA: SISIPKAN TITIK POTONG ---
+            let finalX = [];
+            let finalYGround = [];
+            let finalYDesign = [];
+            let finalLabels = [];
+
+            if (chartData.x.length > 0) {
+                for (let i = 0; i < chartData.x.length - 1; i++) {
+                    // 1. Tambahkan titik data asli saat ini
+                    finalX.push(chartData.x[i]);
+                    finalYGround.push(chartData.yGround[i]);
+                    finalYDesign.push(chartData.yDesign[i]);
+                    finalLabels.push(chartData.labels[i]);
+
+                    // 2. Cek apakah ada perpotongan di antara titik ini (i) dan titik berikutnya (i+1)
+                    // Perpotongan terjadi jika posisi relatif (di atas/di bawah) antara ground dan design berubah.
+                    const isGroundAbove1 = chartData.yGround[i] > chartData.yDesign[i];
+                    const isGroundAbove2 = chartData.yGround[i+1] > chartData.yDesign[i+1];
+
+                    if (isGroundAbove1 !== isGroundAbove2) {
+                        // Ada potensi perpotongan, hitung titik pastinya
+                        const intersection = findIntersection(
+                            chartData.x[i], chartData.yGround[i], chartData.yDesign[i],
+                            chartData.x[i+1], chartData.yGround[i+1], chartData.yDesign[i+1]
+                        );
+
+                        if (intersection) {
+                            // 3. Jika ditemukan, SISIPKAN titik potong tersebut
+                            finalX.push(intersection.x);
+                            // Di titik potong, elevasi ground dan design sama
+                            finalYGround.push(intersection.y);
+                            finalYDesign.push(intersection.y); 
+                            // Label untuk titik potong bisa dikosongkan agar tidak memenuhi sumbu X
+                            finalLabels.push(""); 
+                        }
+                    }
+                }
+                // 4. Jangan lupa tambahkan titik data terakhir
+                finalX.push(chartData.x[chartData.x.length - 1]);
+                finalYGround.push(chartData.yGround[chartData.yGround.length - 1]);
+                finalYDesign.push(chartData.yDesign[chartData.yDesign.length - 1]);
+                finalLabels.push(chartData.labels[chartData.labels.length - 1]);
+            }
+
+
+            // --- UPDATE DATA UNTUK PLOTTING ---
+            // Gunakan data yang sudah diperkaya dengan titik potong
+            const plotX = finalX;
+            const plotYGround = finalYGround;
+            const plotYDesign = finalYDesign;
+            const plotLabels = finalLabels;
+            
+            // Kalkulasi ulang batas atas (yMax) untuk arsiran menggunakan data baru
+            const yMax = plotYGround.map((g, i) => Math.max(g, plotYDesign[i]));
+
+            // --- CONFIGURATION & THEME (Tema Modern & Jelas) ---
+            const CHART_THEME = {
+                colors: {
+                    design: '#F43F5E',      // Rose-500: Merah yang lebih modern
+                    cut: 'rgba(244, 63, 94, 0.35)', // Transparansi 0.35 agar lebih jelas tapi tetap tembus pandang
+                    ground: '#6366F1',      // Indigo-500: Biru/Ungu yang modern
+                    fill: 'rgba(16, 185, 129, 0.35)', // Emerald-500 dengan transparansi 0.35
+                    grid: '#F1F5F9',        // Slate-100: Warna grid yang halus
+                    text: '#64748B',        // Slate-500: Warna teks yang nyaman dibaca
+                    bg: 'rgba(0,0,0,0)'     // Background transparan
+                },
+                font: {
+                    family: "'Inter', sans-serif", // Font modern (pastikan sudah di-load di HTML)
+                    size: 11
+                }
+            };
+
+            // --- TRACES DEFINITION (Definisi Grafik) ---
+            const traces = [
+                // 1. Garis Rencana (Design Plan) - Putus-putus
+                {
+                    x: plotX,
+                    y: plotYDesign,
+                    mode: 'lines',
+                    name: 'Design Plan',
+                    line: { color: CHART_THEME.colors.design, width: 2.5, dash: 'dash' },
+                    hoverinfo: 'y+name'
+                },
+                // 2. Area Galian (Cut Volume) - Merah Transparan
+                {
+                    x: plotX,
+                    y: yMax, // Mengisi area antara yMax dan garis Design di bawahnya
+                    mode: 'lines',
+                    name: 'Cut Volume',
+                    line: { width: 0 }, // Tidak perlu garis batas untuk area
+                    fill: 'tonexty', // Mengisi sampai trace sebelumnya (Design Plan)
+                    fillcolor: CHART_THEME.colors.cut,
+                    hoverinfo: 'skip', // Tidak perlu tooltip untuk area, cukup di garisnya
+                    showlegend: true
+                },
+                // 3. Tanah Asli (Existing Ground) - Garis Solid
+                {
+                    x: plotX,
+                    y: plotYGround,
+                    mode: 'lines',
+                    name: 'Existing Ground',
+                    line: { color: CHART_THEME.colors.ground, width: 2.5 },
+                    hoverinfo: 'y+name'
+                },
+                // 4. Area Timbunan (Fill Volume) - Hijau Transparan
+                {
+                    x: plotX,
+                    y: yMax, // Mengisi area antara yMax dan garis Ground di bawahnya
+                    mode: 'lines',
+                    name: 'Fill Volume',
+                    line: { width: 0 },
+                    fill: 'tonexty', // Mengisi sampai trace sebelumnya (Existing Ground)
+                    fillcolor: CHART_THEME.colors.fill,
+                    hoverinfo: 'skip',
+                    showlegend: true
+                }
+            ];
+
+            // --- LAYOUT CONFIGURATION (Pengaturan Tampilan) ---
+            const layout = {
+                autosize: true,
+                // Margin disesuaikan agar label tidak terpotong
+                margin: { t: 30, r: 20, l: 60, b: 80 }, 
+                font: { family: CHART_THEME.font.family, color: CHART_THEME.colors.text, size: CHART_THEME.font.size },
+                paper_bgcolor: CHART_THEME.colors.bg,
+                plot_bgcolor: CHART_THEME.colors.bg,
+                
+                // Legend Horizontal di Atas Grafik
+                legend: {
+                    orientation: 'h',
+                    yanchor: 'bottom', y: 1.02,
+                    xanchor: 'left', x: 0,
+                    font: { size: 12 }
+                },
+                
+                // Sumbu X (Station)
+                xaxis: {
+                    title: { text: 'Station (STA)', font: { weight: '600' } },
+                    gridcolor: CHART_THEME.colors.grid,
+                    linecolor: '#CBD5E1',
+                    showline: true,
+                    tickvals: plotX, // Gunakan data X yang sudah ada titik potongnya
+                    ticktext: plotLabels, // Gunakan label yang sesuai
+                    tickangle: -45, // Miringkan label agar tidak bertumpuk jika datanya rapat
+                },
+
+                // Sumbu Y (Elevation)
+                yaxis: {
+                    title: 'Elevation (m)',
+                    gridcolor: CHART_THEME.colors.grid,
+                    zeroline: false, // Hilangkan garis nol yang tebal
+                    autorange: true
+                },
+
+                // Tooltip Styling yang Bersih
+                hovermode: 'x unified', // Menampilkan satu garis vertikal untuk semua data di X yang sama
+                hoverlabel: {
+                    bgcolor: "#FFFFFF",
+                    bordercolor: "#E2E8F0",
+                    font: { family: CHART_THEME.font.family, size: 13, color: "#0F172A" },
+                }
+            };
+
+            // --- PLOTLY CONFIG (Pengaturan Interaksi) ---
+            const config = {
+                displayModeBar: true,
+                displaylogo: false, // Hilangkan logo Plotly
+                responsive: true,
+                // Hapus tombol-tombol yang jarang diperlukan untuk tampilan profil ini
+                modeBarButtonsToRemove: ['lasso2d', 'select2d', 'autoScale2d', 'toggleSpikelines', 'hoverClosestCartesian', 'hoverCompareCartesian']
+            };
+
+            // --- RENDER CHART ---
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            // Hapus plot lama jika ada sebelum membuat yang baru (opsional, untuk keamanan)
+            Plotly.purge('elevationChart');
+            Plotly.newPlot('elevationChart', traces, layout, config);
+        }
+
+        // 6. Initialize everything when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize icons
+            lucide.createIcons();
+            
+            // Initialize chart
+            setTimeout(initChart, 600); // Slightly longer delay for entrance
+            
+            // Remove reveal classes
+            document.querySelectorAll('.reveal-load').forEach(el => {
+                el.classList.remove('reveal-load');
+            });
+
+            // Trigger Initial Count Up
+            setTimeout(() => triggerCountUp(), 500);
+        
+
+
+            const fileInput = document.getElementById('excelFileInput');
+        const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'excelFileInput\').click()"]'); // Ambil tombolnya
+
+        if (fileInput && uploadBtn) {
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    
+                    if (!confirm(`Anda akan mengunggah file ${this.files[0].name}. Semua data yang ada di file akan ditambahkan ke proyek ini. Lanjutkan?`)) {
+                        this.value = ''; 
+                        return;
+                    }
+                    
+                    // 1. Persiapan AJAX dengan FormData
+                    const formData = new FormData(document.getElementById('excelUploadForm'));
+                    const originalHtml = uploadBtn.innerHTML;
+                    
+                    // 2. Tampilkan Loading (UX)
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-1 animate-spin"></i> Uploading...';
+                    lucide.createIcons();
+
+                    // 3. Kirim Request
+                    fetch(document.getElementById('excelUploadForm').action, {
+                        method: 'POST',
+                        body: formData // FormData secara otomatis menangani file dan CSRF token
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => { 
+                                throw new Error(errorData.message || 'Gagal memproses file di server.'); 
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert(data.message);
+                            // Refresh halaman untuk menampilkan data baru
+                            window.location.reload(); 
+                        } else {
+                            throw new Error(data.message || 'Respons sukses tapi status error.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert("Gagal Upload: " + error.message);
+                        
+                        // 4. Reset tombol dan input file jika gagal
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = originalHtml;
+                        fileInput.value = ''; 
+                        lucide.createIcons();
+                    });
+                }
+            });
+        }
+        
+        });
+    </script>
+
+    <script>
+        // 1. Fungsi Buka Modal
+        function openAddRowModal() {
+            const modal = document.getElementById('addRowModal');
+            modal.classList.remove('hidden');
+            // Fokus otomatis ke input
+            document.getElementById('rowCountInput').focus();
+        }
+
+        // 2. Fungsi Tutup Modal
+        function closeAddRowModal() {
+            document.getElementById('addRowModal').classList.add('hidden');
+        }
+
+        // 3. Fungsi Kirim Data ke Backend (PENTING)
+        function submitAddRows() {
+            const count = document.getElementById('rowCountInput').value;
+            const projectId = "{{ project.id }}"; // Pastikan context project dikirim dari view
+
+            // Validasi sederhana
+            if (count < 1) return alert("Minimal 1 baris!");
+
+            // Tampilkan loading (opsional: ubah teks tombol)
+            
+            // Kirim Request ke Django
+            fetch(`/survey/api/add-rows/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' // Wajib untuk keamanan Django
+                },
+                body: JSON.stringify({ 'count': count })
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Jika sukses, refresh halaman agar tabel terupdate
+                    window.location.reload(); 
+                } else {
+                    alert("Gagal menambahkan baris. Coba lagi.");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+
+    
+    <script>
+
+        function runProcessAnimation() {
+            const icon = document.getElementById('refresh-icon');
+            const projectId = "{{ project.id }}"; // Ambil ID project dari template
+
+            // 1. Mulai Animasi Putar
+            icon.classList.add('animate-spin');
+            
+            // 2. Panggil Backend Django
+            fetch(`/survey/api/calculate/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hentikan animasi
+                setTimeout(() => {
+                    icon.classList.remove('animate-spin');
+                    
+                    if (data.status === 'success') {
+                        // Refresh halaman untuk melihat hasil di tabel "Processed Results"
+                        window.location.reload(); 
+                    } else {
+                        alert("Gagal: " + data.message);
+                    }
+                }, 800); // Sedikit delay biar animasinya kelihatan
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                icon.classList.remove('animate-spin');
+                alert("Terjadi kesalahan sistem.");
+            });
+        }
+    </script> {% endcomment %}
+{% endblock extra_js %}

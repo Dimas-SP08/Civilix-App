@@ -1,28 +1,203 @@
+
+{% load static %}
+{% if request.user.is_authenticated %}
+
+
+    
+
+
+    <!-- ============================================== -->
+    <!-- APP NAVBAR START                               -->
+    <!-- ============================================== -->
+     
+    <nav class="fixed top-0 w-full z-40 glass-nav transition-all duration-300 " >
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+
+                <!-- 1. KIRI: Navigasi Konteks -->
+                <div class="flex items-center gap-4">
+                    
+                    <button id="sidebar-toggle-btn" type="button" class="inline-flex items-center p-2 text-sm text-slate-500 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                        <span class="sr-only">Open sidebar</span>
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <div class="flex items-center gap-4">
+                        <!-- Logo Brand -->
+                        <a href="/survey/" class="flex-shrink-0 flex items-center gap-2 group">
+                            
+                            <img class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:rotate-6 transition-transform" src="{% static "img/diespy.png" %}" alt="">
+                        
+                            <div class="flex flex-col">
+                                <span class="font-bold text-lg text-onSurfaceStrong leading-none group-hover:text-primary transition-colors">Civilix</span>
+                                <span class="text-[10px] font-semibold text-tertiary uppercase tracking-wider leading-none mt-1  sm:block">by {{request.user.nama}}</span>
+                            </div>
+                        </a>
+
+                        <!-- Divider & Breadcrumbs (Hidden on very small screens) -->
+                        <div class="hidden md:flex items-center gap-4">
+                            <div class="h-6 w-px bg-border"></div> <!-- Vertical Divider -->
+                            
+                            <!-- Dynamic Breadcrumb Text -->
+                            <nav class="flex" aria-label="Breadcrumb">
+                                <ol class="flex items-center space-x-2">
+                                    <li>
+                                        <a href="/survey/" class="text-sm font-medium text-onSurface/80 hover:text-primary transition-colors">Dashboard</a>
+                                    </li>
+
+                                    {% with route_name=request.resolver_match.url_name %}
+                                        
+                                        {% if route_name == 'details' %}
+                                            <li>
+                                                <span class="text-onSurface/40">/</span>
+                                            </li>
+                                            <li>
+                                                <span class="text-sm font-semibold text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10" title="{{ project.project_name }}">
+                                                    {{ project.project_name|truncatechars:25 }}
+                                                </span>
+                                            </li>
+
+                                        {% elif 'profile' in route_name or 'password' in route_name or 'update' in route_name %}
+                                            <li>
+                                                <span class="text-onSurface/40">/</span>
+                                            </li>
+                                            <li>
+                                                <span class="text-sm font-semibold text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
+                                                    Pengaturan Akun
+                                                </span>
+                                            </li>
+
+                                        {% elif route_name == 'index' %}
+                                            <li>
+                                                <span class="text-onSurface/40">/</span>
+                                            </li>
+                                            <li>
+                                                <span class="text-sm font-semibold text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
+                                                    Overview
+                                                </span>
+                                            </li>
+                                            
+                                        {% endif %}
+                                        
+                                    {% endwith %}
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. KANAN: Manajemen Akun -->
+                <div class="flex items-center gap-2 sm:gap-4">
+                    
+                    <!-- Notification Bell -->
+                    <button class="relative p-2 text-onSurface hover:text-primary hover:bg-slate-100 rounded-full transition-colors focus:outline-none group">
+                        <i data-lucide="bell" class="w-5 h-5 group-hover:animate-swing"></i>
+                        <!-- Red Dot Indicator -->
+                        <span class="absolute top-2 right-2.5 block h-2 w-2 rounded-full ring-2 ring-white bg-error animate-pulse"></span>
+                    </button>
+
+                    <!-- Profile Dropdown Container -->
+                    <div class="relative ml-1">
+                        <!-- Trigger Button -->
+                        <button id="user-menu-button" class="flex items-center gap-2 p-1.5 rounded-full border border-transparent hover:border-border hover:bg-slate-50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <!-- Avatar / Initials -->
+                            
+                            <img class="w-9 h-9 rounded-full bg-white from-primary to-primaryHover text-white flex items-center justify-center font-bold text-sm shadow-md border-2 border-white" src="{{request.user.img_user.url}}" alt="">
+                            
+                            
+                            <!-- User Info (Desktop) -->
+                            <div class="hidden lg:block text-left pr-2">
+                                <p class="text-sm font-bold text-onSurfaceStrong leading-none">{{request.user.nama}}</p>
+                                <p class="text-[10px] text-tertiary font-medium leading-none mt-1">Surveyor Lead</p>
+                            </div>
+
+                            <i data-lucide="chevron-down" id="chevron-icon" class="w-4 h-4 text-onSurface/70 transition-transform duration-200 hidden sm:block"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-64 origin-top-right bg-white rounded-xl shadow-xl border border-border ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transform transition-all duration-200">
+                            
+                            <!-- Header (Mobile Info View) -->
+                            <div class="px-4 py-3 border-b border-border bg-slate-50/50 rounded-t-xl">
+                                <p class="text-sm font-bold text-onSurfaceStrong">{{request.user.nama}}</p>
+                                <p class="text-xs text-onSurface truncate">{{request.user.email}}</p>
+                            </div>
+
+                            <!-- Menu Items -->
+                            <div class="p-1">
+                                <a href="/accounts/" class="group flex items-center px-3 py-2.5 text-sm text-onSurfaceStrong rounded-lg hover:bg-primary/5 hover:text-primary transition-colors">
+                                    <i data-lucide="user" class="mr-3 h-4 w-4 text-onSurface/70 group-hover:text-primary"></i>
+                                    Profil Saya
+                                </a>
+                                <a href="/accounts/update/user" class="group flex items-center px-3 py-2.5 text-sm text-onSurfaceStrong rounded-lg hover:bg-primary/5 hover:text-primary transition-colors">
+                                    <i data-lucide="settings" class="mr-3 h-4 w-4 text-onSurface/70 group-hover:text-primary"></i>
+                                    Edit Profil
+                                </a>
+                                <a href="/accounts/password_change/" class="group flex items-center px-3 py-2.5 text-sm text-onSurfaceStrong rounded-lg hover:bg-primary/5 hover:text-primary transition-colors">
+                                    <i data-lucide="lock" class="mr-3 h-4 w-4 text-onSurface/70 group-hover:text-primary"></i>
+                                    Ganti Password
+                                </a>
+                            </div>
+                            
+                            <!-- Footer / Logout -->
+                            <div class="border-t border-border p-1">
+                                <a href="/accounts/logout/" class="group flex items-center px-3 py-2.5 text-sm text-error rounded-lg hover:bg-error/5 transition-colors">
+                                    <i data-lucide="log-out" class="mr-3 h-4 w-4 text-error/70 group-hover:text-error"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- ============================================== -->
+    <!-- APP NAVBAR END                                 -->
+    <!-- ============================================== -->
+
+    
+
+    
+
+
+{% else %}
+
+
 <!-- Navbar -->
-    <nav class="fixed top-0 w-full z-50 glass-nav transition-all duration-300" id="navbar">
+
+    <nav class="fixed top-0 w-full z-40 glass-nav transition-all duration-300" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 
                 <!-- Logo -->
                 <a href="/" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-primary/20 transition-transform group-hover:rotate-12">d</div>
+                    <img class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:rotate-6 transition-transform" src="{% static "img/diespy.png" %}" alt="">
                     <span class="font-bold text-xl text-onSurfaceStrong tracking-tight">
-                        diespy<span class="text-primary">.io</span>
+                        Civilix<span class="text-primary">.io</span>
                     </span>
                 </a>
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="#about" class="text-sm font-medium hover:text-primary transition-colors">About</a>
-                    <a href="#features" class="text-sm font-medium hover:text-primary transition-colors">Features</a>
-                    <a href="#how-it-works" class="text-sm font-medium hover:text-primary transition-colors">How it Works</a>
-                    <a href="#contact" class="text-sm font-medium hover:text-primary transition-colors">Contact</a>
+                    {% with route_name=request.resolver_match.url_name %}
+                        <a href="{% if route_name == 'index' %}#about {% else %}
+                        {% url "about" %}{% endif %}" class="text-sm font-medium hover:text-primary transition-colors">About</a>
+                        <a href="{% if route_name == 'index' %}#features {% else %}
+                        {% url "features" %}{% endif %}" class="text-sm font-medium hover:text-primary transition-colors">Features</a>
+                        <a href="{% if route_name == 'index' %}#how-it-works {% else %}
+                        {% url "docs" %}{% endif %}" class="text-sm font-medium hover:text-primary transition-colors">How it Works</a>
+                        <a href="{% if route_name == 'index' %}#contact {% else %}
+                        {% url "contact" %}{% endif %}" class="text-sm font-medium hover:text-primary transition-colors">Contact</a>
+                    {% endwith %}
                 </div>
 
                 <!-- CTA Buttons -->
                 <div class="hidden md:flex items-center gap-3">
-                    <a href="login.html" class="text-sm font-semibold text-onSurfaceStrong hover:text-primary transition-colors px-3 py-2">Log In</a>
-                    <a href="register.html" class="bg-primary hover:bg-primaryHover text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0">
+                    
+                    <a href="{% url "login" %}" class="text-sm font-semibold text-onSurfaceStrong hover:text-primary transition-colors px-3 py-2">Log In</a>
+                    
+                    <a href="/accounts/register/" class="bg-primary hover:bg-primaryHover text-white text-sm font-semibold px-5 py-2.5 rounded-lg shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0">
                         Get Started
                     </a>
                 </div>
@@ -35,10 +210,58 @@
         </div>
 
         <!-- Mobile Dropdown -->
-        <div id="mobile-menu" class="hidden md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-xl p-4 flex-col space-y-4">
-            <a href="#about" class="block px-4 py-2 rounded-lg hover:bg-slate-50 font-medium">About</a>
-            <a href="#features" class="block px-4 py-2 rounded-lg hover:bg-slate-50 font-medium">Features</a>
-            <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-50 font-medium">Log In</a>
-            <a href="register.html" class="block w-full text-center bg-primary text-white font-semibold py-3 rounded-lg">Get Started</a>
+        <div id="mobile-menu" class="hidden absolute right-0 top-full mt-2 w-72 origin-top-right bg-white rounded-xl shadow-xl border border-slate-100 ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transform transition-all duration-200">
+    
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Navigation</span>
+            </div>
+
+            <div class="p-1.5 space-y-0.5">
+                {% with route_name=request.resolver_match.url_name %}
+                    
+                    <a href="{% if route_name == 'index' %}#about{% else %}{% url "about" %}{% endif %}" 
+                    class="group flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-teal-50 hover:text-teal-700 transition-colors">
+                        <i data-lucide="info" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-600 transition-colors"></i>
+                        About
+                    </a>
+
+                    <a href="{% if route_name == 'index' %}#features{% else %}{% url "features" %}{% endif %}" 
+                    class="group flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-teal-50 hover:text-teal-700 transition-colors">
+                        <i data-lucide="zap" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-600 transition-colors"></i>
+                        Features
+                    </a>
+
+                    <a href="{% if route_name == 'index' %}#how-it-works{% else %}{% url "docs" %}{% endif %}" 
+                    class="group flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-teal-50 hover:text-teal-700 transition-colors">
+                        <i data-lucide="book-open" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-600 transition-colors"></i>
+                        How it Works
+                    </a>
+                    
+                    <a href="{% if route_name == 'index' %}#contact{% else %}{% url "contact" %}{% endif %}" 
+                    class="group flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-teal-50 hover:text-teal-700 transition-colors">
+                        <i data-lucide="mail" class="w-4 h-4 mr-3 text-slate-400 group-hover:text-teal-600 transition-colors"></i>
+                        Contact
+                    </a>
+
+                {% endwith %}
+            </div>
+
+            <div class="p-2 border-t border-slate-100 bg-slate-50/30 rounded-b-xl">
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="{% url 'login' %}" 
+                    class="flex items-center justify-center px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm">
+                    Log In
+                    </a>
+                    <a href="/accounts/register/" 
+                    class="flex items-center justify-center px-4 py-2 text-sm font-bold text-white bg-teal-600 rounded-lg hover:bg-teal-700 shadow-md shadow-teal-200/50 transition-all transform active:scale-95">
+                    Get Started
+                    </a>
+                </div>
+            </div>
+
         </div>
+           
+        
     </nav>
+
+{% endif %}

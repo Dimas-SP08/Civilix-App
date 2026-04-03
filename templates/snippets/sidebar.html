@@ -1,0 +1,67 @@
+{% load static %}
+
+<aside id="sidebar" class="fixed top-0 lg:top-20 left-0 z-40 w-64 h-screen lg:h-[calc(100vh-5rem)] transition-transform -translate-x-full  bg-white border-r border-slate-200 flex flex-col" aria-label="Sidebar">
+   
+    <div class="p-5 border-b border-slate-100 bg-slate-50/30">
+        <a href="#" onclick="openCreateProjectModal(event)" class="w-full bg-teal-600 hover:bg-teal-700 text-white px-4 py-3 rounded-xl shadow-lg shadow-teal-600/20 transition-all duration-200 flex items-center justify-center gap-2 font-semibold text-sm transform active:scale-95 group ring-1 ring-white/20">
+            <i data-lucide="plus" class="w-4 h-4 group-hover:rotate-90 transition-transform"></i>
+            <span>New Project</span>
+        </a>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
+        
+        <div>
+            <h3 class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Main Menu</h3>
+            <div class="space-y-1">
+                {% with url_name=request.resolver_match.url_name %}
+                <a href="{% url 'survey:index' %}" 
+                   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group
+                   {% if url_name == 'index' %} 
+                        bg-teal-50 text-teal-700 border-l-4 border-teal-600 
+                   {% else %} 
+                        text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-l-4 border-transparent
+                   {% endif %}">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 {% if url_name == 'index' %}text-teal-600{% else %}text-slate-400 group-hover:text-slate-600{% endif %}"></i>
+                    Dashboard
+                </a>
+                {% endwith %}
+            </div>
+        </div>
+
+        
+
+        {% if recent_projects %}
+        <div>
+            <div class="flex items-center justify-between px-3 mb-3">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recent</h3>
+                <a href="#" class="text-[10px] text-teal-600 hover:text-teal-700 font-semibold hover:underline">View All</a>
+            </div>
+            <div class="space-y-1">
+                {% for project in recent_projects %}
+                <a href="{% url 'survey:details' pk=project.id %}" class="flex items-center px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors truncate">
+                    <div class="w-2 h-2 rounded-full bg-slate-300 mr-3 shrink-0"></div>
+                    <span class="truncate">{{ project.project_name }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </nav>
+
+    <div class="p-4 border-t border-slate-200 bg-white">
+        <div class="space-y-1">
+            <a href="{% url 'account:update_profile' %}" class="flex items-center px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                <i data-lucide="settings" class="w-4 h-4 mr-3 text-slate-400"></i>
+                Settings
+            </a>
+            <a href="{% url 'docs' %}" class="flex items-center px-3 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                <i data-lucide="help-circle" class="w-4 h-4 mr-3 text-slate-400"></i>
+                Documentation
+            </a>
+        </div>
+    </div>
+</aside>
+
+<div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity"></div>

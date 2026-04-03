@@ -1,5 +1,14 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+</style>
+{% endblock extra_css %}
+
 {% block content %}
 <div class="bg-slate-50 text-gray-800 overflow-x-hidden">
 
@@ -109,3 +118,8 @@
 
 
 {% endblock content %}
+
+
+{% block extra_js %}
+
+{% endblock extra_js %}

@@ -1,0 +1,602 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                ...
+                // Hapus seluruh script tailwind.config di file ini
+                ...
+            }
+        }
+    }
+</script>
+
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8; 
+        }
+
+        /* Utility for staggered animations */
+        .animate-delay-100 { animation-delay: 100ms; }
+        .animate-delay-200 { animation-delay: 200ms; }
+        .animate-delay-300 { animation-delay: 300ms; }
+        .animate-delay-400 { animation-delay: 400ms; }
+        .animate-delay-500 { animation-delay: 500ms; }
+        
+        /* Initial state for animated elements */
+        .reveal-load {
+            opacity: 0;
+        }
+    </style>
+{% endblock extra_css %}
+
+{% block content %}
+    <main class=" w-full px-4 sm:px-6 lg:px-8 py-8 ">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
+            <div class="reveal-load animate-fade-in-up animate-delay-100 bg-white rounded-2xl p-6 border border-primary/20 shadow-card hover:shadow-hover transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden group cursor-default">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-primaryContainer/40 rounded-full -mr-10 -mt-10 transition-transform duration-500 group-hover:scale-125"></div>
+                <div class="relative z-10">
+                    <p class="text-tertiary text-sm font-semibold mb-2">Total Active Projects</p>
+                    <div class="flex items-baseline gap-2">
+                        <h2 class="text-4xl font-bold text-onSurfaceStrong counter-anim" data-target="{{total_projects}}">0</h2>
+                        <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 border border-emerald-100 opacity-0 animate-fade-in-up animate-delay-500" style="animation-fill-mode: forwards;">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i> +2 this week
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary w-0 rounded-full shadow-[0_0_10px_rgba(0,106,106,0.4)] transition-all duration-1000 ease-out" style="width: 75%"></div> 
+                </div>
+            </div>
+
+            <div class="reveal-load animate-fade-in-up animate-delay-200 bg-card rounded-2xl p-6 border border-border shadow-card hover:shadow-hover hover:border-tertiary/30 transition-all duration-300 transform hover:-translate-y-1 group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-tertiary text-sm font-semibold mb-2">Completed Projects</p>
+                        <h2 class="text-3xl font-bold text-onSurfaceStrong counter-anim" data-target="{{completed_count}}">0</h2>
+                    </div>
+                    <div class="p-2 bg-tertiaryContainer rounded-lg text-tertiary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal-load animate-fade-in-up animate-delay-300 bg-card rounded-2xl p-6 border border-border shadow-card hover:shadow-hover hover:border-tertiary/30 transition-all duration-300 transform hover:-translate-y-1 group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-tertiary text-sm font-semibold mb-2">In Progress</p>
+                        <h2 class="text-3xl font-bold text-onSurfaceStrong counter-anim" data-target="{{active_count}}">0</h2>
+                    </div>
+                    <div class="p-2 bg-warningBg rounded-lg text-warning border border-warning/10 group-hover:border-warning transition-colors">
+                        <i data-lucide="loader" class="w-5 h-5 animate-spin-slow"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal-load animate-fade-in-up animate-delay-400 bg-card rounded-2xl p-6 border border-border shadow-card hover:shadow-hover hover:border-tertiary/30 transition-all duration-300 transform hover:-translate-y-1 group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-tertiary text-sm font-semibold mb-2">Total Data Points</p>
+                        <h2 class="text-3xl font-bold text-onSurfaceStrong">{{total_data_points}}</h2>
+                    </div>
+                    <div class="p-2 bg-primaryContainer/50 rounded-lg text-primary border border-primary/10 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-10 gap-6 mb-8">
+            
+            <div class="lg:col-span-7 space-y-6">
+                
+                <div class="reveal-load animate-fade-in-up animate-delay-300 bg-card rounded-2xl border border-border shadow-card p-6 hover:shadow-soft transition-shadow duration-300">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-onSurfaceStrong">Project Type Distribution</h3>
+                        <div class="relative group">
+                            <select class="bg-surface border border-border text-xs text-onSurface font-medium rounded-md pl-3 pr-8 py-1.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none cursor-pointer hover:bg-slate-100 transition-colors">
+                                <option>Last 6 Months</option>
+                                <option>This Year</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-3 h-3 text-tertiary absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-primary transition-colors"></i>
+                        </div>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="projectChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="reveal-load animate-fade-in-up animate-delay-400 bg-card rounded-2xl border border-border shadow-card p-6">
+                    <div class="flex items-center gap-2 mb-5">
+                        <div class="p-1.5 bg-primaryContainer/50 rounded-md text-primary">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-onSurfaceStrong">Recent Survey Activity</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        {% for project in projects|slice:":3" %}
+                        <div class="flex items-start gap-4 p-4 rounded-xl bg-surface border border-border hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow-sm duration-200 cursor-pointer group">
+                            
+                            <div class="mt-1 min-w-max">
+                                {% if project.survey_type == 'OPEN' %}
+                                    <div class="p-2 bg-sky-100 rounded-lg text-sky-600 group-hover:scale-110 transition-transform shadow-sm">
+                                        <i data-lucide="arrow-right-circle" class="w-5 h-5"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600 group-hover:scale-110 transition-transform shadow-sm">
+                                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex-1 w-full">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors truncate pr-2">{{ project.project_name }}</h4>
+                                    <span class="text-[10px] font-medium text-slate-400 whitespace-nowrap">{{ project.created_at|date:"d M" }}</span>
+                                </div>
+                                
+                                <p class="text-xs text-onSurface mt-1">
+                                    Metode: 
+                                    {% if project.survey_type == 'OPEN' %}
+                                        <span class="font-semibold text-sky-700">Open Traverse</span>
+                                    {% else %}
+                                        <span class="font-semibold text-indigo-700">Closed Loop</span>
+                                    {% endif %}
+                                </p>
+                                
+                                <div class="mt-2.5 flex items-center gap-2">
+                                    {% if project.status == 'COMPLETED' %}
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                            <i data-lucide="check-circle-2" class="w-3 h-3"></i> Completed
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                            <i data-lucide="loader" class="w-3 h-3 animate-spin"></i> In Progress
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                        </div>
+                        
+                        {% empty %}
+                        <div class="p-6 text-center flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                            <i data-lucide="folder-open" class="w-8 h-8 text-slate-300 mb-2"></i>
+                            <p class="text-sm font-medium">Belum ada aktivitas proyek.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3 flex flex-col gap-6">
+                
+                <div class="flex-1 reveal-load animate-fade-in-up animate-delay-200 bg-gradient-to-br from-primary to-[#004d4d] rounded-2xl p-6 shadow-xl shadow-primary/20 text-white relative overflow-hidden group transform hover:scale-[1.02] transition-all duration-300 flex flex-col">
+                    <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl transition-transform group-hover:scale-150 duration-700"></div>
+                    
+                    <div class="relative z-10 flex flex-col h-full">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3 opacity-90">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-yellow-200 animate-pulse"></i>
+                                <span class="text-xs font-bold uppercase tracking-wider text-yellow-100">AI Insight</span>
+                            </div>
+                            <h3 class="text-xl font-bold leading-snug mb-4">Latest Project Analysis</h3>
+                            
+                            <div class="flex-grow bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 group-hover:bg-white/15 transition-colors">
+                                <p class="text-sm leading-relaxed text-white/90">
+                                    {% if ai_report %}
+                                        {{ ai_report }}
+                                    {% else %}
+                                        No AI insights available yet. Run some projects to see data-driven recommendations here!
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button class="mt-auto pt-5 w-full">
+                            <div class="w-full py-2.5 bg-white text-primary rounded-lg text-sm font-bold shadow hover:bg-gray-50 transition-all transform active:scale-95 text-center">
+                                View Comparison
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="reveal-load animate-fade-in-up animate-delay-500 bg-card rounded-2xl border border-border shadow-card p-6 flex flex-col items-center justify-center text-center w-full max-w-sm mx-auto hover:shadow-soft transition-shadow duration-300">
+                    <h3 class="text-md font-bold text-tertiary mb-6 uppercase tracking-wide text-xs">Percentage of Completed</h3>
+                    
+                    <div class="relative w-48 h-48 flex items-center justify-center group cursor-pointer">
+                        <div class="absolute inset-0 rounded-full border-[6px] border-slate-100 group-hover:border-slate-200 transition-colors"></div>
+                        
+                        <div class="absolute inset-0 rounded-full border-[6px] border-primary border-t-transparent border-l-transparent transform -rotate-45 w-full h-full shadow-lg shadow-primary/10 transition-all duration-700 ease-out group-hover:rotate-0 group-hover:scale-105"></div>
+                        
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <div class="flex items-baseline">
+                                <span class="text-6xl font-bold text-onSurfaceStrong tracking-tighter counter-anim" data-target="{{ persen_completed|floatformat:0 }}">0</span>
+                                <span class="text-3xl text-tertiary ml-1">%</span>
+                            </div>
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold mt-2 transform transition-transform group-hover:scale-110">Excellent</span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-xs text-onSurface mt-8 px-4 leading-relaxed">Based on {{ total_projects }} standard  <span class="font-semibold">{{ name }}</span> projects.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="reveal-load animate-fade-in-up animate-delay-500 bg-card rounded-2xl border border-border shadow-card overflow-hidden">
+            <div class="p-6 border-b border-border flex justify-between items-center bg-slate-50/50">
+                <h3 class="text-lg font-bold text-onSurfaceStrong">Recent Projects List</h3>
+                <div class="flex gap-2">
+                    <button class="p-2 bg-white border border-border hover:bg-slate-50 rounded-lg text-tertiary shadow-sm transition-all hover:text-primary transform active:scale-95"><i data-lucide="filter" class="w-4 h-4"></i></button>
+                    <button class="p-2 bg-white border border-border hover:bg-slate-50 rounded-lg text-tertiary shadow-sm transition-all hover:text-primary transform active:scale-95"><i data-lucide="download" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-surface text-tertiary font-semibold uppercase text-xs tracking-wider border-b border-border">
+                        <tr>
+                            <th class="px-6 py-4">Project Name</th>
+                            
+                            <th class="px-6 py-4">Date Created</th>
+                            <th class="px-6 py-4">Calculation Status</th>
+                            <th class="px-6 py-4">Initial Elevation</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        {% for project in projects %}
+                        <tr class="hover:bg-slate-50 transition-all duration-200 group cursor-default">
+                            <td class="px-6 py-4 font-bold text-onSurfaceStrong group-hover:text-primary transition-colors group-hover:pl-7">{{project.project_name}}</td>
+                           
+                            <td class="px-6 py-4 text-onSurface">{{project.created_at}}</td>
+                            {% if project.status == "COMPLETED" %}
+                                <td class="px-6 py-4"><span class="flex items-center gap-1.5 text-green-600 font-medium"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Completed</span></td>
+                            {% else %}
+                                <td class="px-6 py-4"><span class="flex items-center gap-1.5 text-blue-600 font-medium"><i data-lucide="loader" class="w-4 h-4"></i> In Progress</span></td>
+                            {% endif %}
+                            <td class="px-6 py-4">
+                                
+                                <span class="text-xs text-slate-500 mt-1 block font-bold ">{{project.initial_elevation}}</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="/survey/details/{{project.id}}"><button class="text-primary hover:text-primaryHover font-bold text-xs border-b border-transparent hover:border-primary transition-all transform hover:scale-105">View Details</button></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+
+    <div id="createProjectModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm" onclick="closeCreateProjectModal()"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0 relative z-10">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-200">
+                
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="flex flex-col">
+                        <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
+                            <i data-lucide="layers" class="h-6 w-6 text-teal-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-5 w-full">
+                            <h3 class="text-xl font-semibold leading-6 text-gray-900 mb-1" id="modal-title">Buat Proyek Baru</h3>
+                            <p class="text-sm text-gray-500">Isi detail proyek survei Anda untuk memulai.</p>
+                            
+                            <form id="createProjectForm" class="mt-6 space-y-4">
+                                {% csrf_token %}
+                                
+                                <div id="projectFormAlert" class="hidden bg-errorBg border border-error/30 rounded-lg p-3 text-sm text-error font-medium text-left"></div>
+
+                                <div>
+                                    <label for="id_project_name" class="block text-sm font-medium text-gray-700 text-left mb-1">Nama Proyek</label>
+                                    <input type="text" name="project_name" id="id_project_name" required maxlength="200"
+                                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3 border text-gray-900"
+                                           placeholder="Contoh: Toll Road Section B">
+                                </div>
+
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700 text-left mb-2">Traverse Method</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        
+                                        <div class="relative flex items-start p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                            <div class="flex h-5 items-center">
+                                                <input id="type_open" name="survey_type" type="radio" value="OPEN" checked
+                                                    class="h-4 w-4 border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
+                                            </div>
+                                            <div class="ml-3 text-sm">
+                                                <label for="type_open" class="font-semibold text-gray-900 cursor-pointer">
+                                                    Open Traverse
+                                                </label>
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                    Linear survey from Point A to B. No automatic closure error check.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="relative flex items-start p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                            <div class="flex h-5 items-center">
+                                                <input id="type_closed" name="survey_type" type="radio" value="CLOSED"
+                                                    class="h-4 w-4 border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
+                                            </div>
+                                            <div class="ml-3 text-sm">
+                                                <label for="type_closed" class="font-semibold text-gray-900 cursor-pointer">
+                                                    Closed Loop
+                                                </label>
+                                                <p class="text-xs text-gray-500 mt-1">
+                                                    Start & end at Point A. Enables accuracy check & Bowditch adjustment.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="id_initial_elevation" class="block text-sm font-medium text-gray-700 text-left mb-1">Elevasi Awal (m)</label>
+                                    <div class="relative">
+                                        <input type="number" step="0.01" name="initial_elevation" id="id_initial_elevation" value="100.0"
+                                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3 border text-gray-900">
+                                    </div>
+                                    <p class="text-xs text-gray-500 text-left mt-1">Elevasi (Z) titik pertama (default: 100.0)</p>
+                                </div>
+                                
+                                <div>
+                                    <label for="id_purpose" class="block text-sm font-medium text-gray-700 text-left mb-1">Tujuan Survei (Opsional)</label>
+                                    <input type="text" name="purpose" id="id_purpose" maxlength="255"
+                                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm py-2 px-3 border text-gray-900"
+                                           placeholder="Contoh: Pengukuran topografi, Cut & Fill">
+                                </div>
+                                
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-100">
+                    <button type="button" onclick="submitCreateProject()" id="submitProjectBtn" class="inline-flex w-full justify-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 sm:ml-3 sm:w-auto transition-colors transform active:scale-95">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Buat Proyek
+                    </button>
+                    <button type="button" onclick="closeCreateProjectModal()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto transition-colors">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block extra_js %}
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // 1. Counter Animation Logic
+        const counters = document.querySelectorAll('.counter-anim');
+        const speed = 200; // The lower the slower
+
+        counters.forEach(counter => {
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-target');
+                const count = +counter.innerText;
+                
+                // Lower inc to make it slower
+                const inc = target / 50;
+
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + inc);
+                    setTimeout(updateCount, 20);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            // Add delay to start counting
+            setTimeout(updateCount, 500);
+        });
+
+        // 2. Initialize Chart.js with Entrance Animation
+        const ctx = document.getElementById('projectChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Long Section', 'Cross Section', 'Cut & Fill'],
+                datasets: [{
+                    label: 'Project Count',
+                    data: [{{ total_projects }}, {{ total_cs }}, {{ total_cut_fill_projects }}],
+                    backgroundColor: [
+                        '#94A3B8', 
+                        '#006A6A', 
+                        '#94A3B8', 
+                        
+                    ],
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barThickness: 32,
+                    hoverBackgroundColor: '#004d4d'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1E293B',
+                        titleColor: '#F8FAFC',
+                        bodyColor: '#CBD5E1',
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(tooltipItems) { return tooltipItems[0].label; }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#E2E8F0',
+                            drawBorder: false,
+                            borderDash: [4, 4]
+                        },
+                        ticks: {
+                            color: '#64748B',
+                            font: { family: 'Inter', size: 11, weight: '500' },
+                            padding: 10
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: '#64748B',
+                            font: { family: 'Inter', size: 11, weight: '600' }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutElastic',
+                    delay: (context) => {
+                        let delay = 0;
+                        if (context.type === 'data' && context.mode === 'default') {
+                            delay = context.dataIndex * 200 + 500; // Stagger bars
+                        }
+                        return delay;
+                    },
+                }
+            }
+        });
+    </script>
+
+    {{ block.super }}
+    <script>
+        // --- NEW PROJECT MODAL JS ---
+        
+        // 1. Fungsi Buka Modal (Dipanggil dari sidebar.html)
+        function openCreateProjectModal(event) {
+            if (event) event.preventDefault(); // Mencegah navigasi dari tag <a>
+            const modal = document.getElementById('createProjectModal');
+            modal.classList.remove('hidden');
+            // Fokus otomatis ke input nama proyek
+            document.getElementById('id_project_name').focus();
+            
+            // Re-initialize lucide icons inside the modal
+            lucide.createIcons(); 
+        }
+
+        // 2. Fungsi Tutup Modal
+        function closeCreateProjectModal() {
+            document.getElementById('createProjectModal').classList.add('hidden');
+        }
+
+        // 3. Fungsi Kirim Data Proyek ke Backend (via AJAX)
+        function submitCreateProject() {
+            const alertDiv = document.getElementById('projectFormAlert');
+            const submitBtn = document.getElementById('submitProjectBtn');
+            const url = "{% url 'survey:create_project' %}";
+
+            // Kumpulkan data formulir
+            const formData = {
+                project_name: document.getElementById('id_project_name').value,
+                initial_elevation: document.getElementById('id_initial_elevation').value,
+                purpose: document.getElementById('id_purpose').value,
+                survey_type: document.querySelector('input[name="survey_type"]:checked').value
+            };
+
+            // Validasi sederhana
+            if (!formData.project_name.trim()) {
+                alertDiv.innerText = "Nama Proyek wajib diisi.";
+                alertDiv.classList.remove('hidden');
+                return;
+            }
+            alertDiv.classList.add('hidden'); // Bersihkan pesan error sebelumnya
+
+            // Nonaktifkan tombol dan tampilkan loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-1 animate-spin"></i> Loading';
+            lucide.createIcons();
+
+            // Kirim Request ke Django
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('#createProjectForm input[name="csrfmiddlewaretoken"]').value
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                // Cek status, jika tidak OK (4xx atau 5xx), coba baca JSON untuk detail error
+                if (!response.ok) {
+                    return response.json().then(errorData => { 
+                        throw new Error(errorData.message || 'Terjadi kesalahan server.'); 
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Sukses: Redirect ke halaman detail proyek baru
+                    window.location.href = data.redirect_url;
+                } else if (data.status === 'error' && data.errors) {
+                    // Tangani error form dari Django
+                    const errors = JSON.parse(data.errors);
+                    let errorMessage = "Formulir tidak valid:";
+                    for (const field in errors) {
+                         // Ambil pesan error pertama dari setiap field
+                        errorMessage += `\n- ${field}: ${errors[field][0].message}`;
+                    }
+                    alertDiv.innerText = errorMessage;
+                    alertDiv.classList.remove('hidden');
+                    
+                    // Aktifkan kembali tombol
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 mr-1"></i> Buat Proyek';
+                    lucide.createIcons();
+                } else {
+                     // Error tak terduga dari view
+                    alertDiv.innerText = "Gagal membuat proyek: " + data.message;
+                    alertDiv.classList.remove('hidden');
+
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 mr-1"></i> Buat Proyek';
+                    lucide.createIcons();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alertDiv.innerText = "Terjadi kesalahan sistem: " + error.message;
+                alertDiv.classList.remove('hidden');
+                
+                // Aktifkan kembali tombol
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 mr-1"></i> Buat Proyek';
+                lucide.createIcons();
+            });
+        }
+    </script>
+{% endblock extra_js %}
