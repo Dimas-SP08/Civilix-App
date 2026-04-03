@@ -1,5 +1,6 @@
 # Secret Environment Variables
 .env
+.vscode
 
 # Database 
 # (You usually do not want to upload your local test database)
