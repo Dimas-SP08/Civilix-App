@@ -39,7 +39,7 @@ def draw_cross_section(project_id, kop, skala_x, skala_y, sta_start, sta_end, da
     
 
     for i,d in enumerate(data_survey):
-        for g in d:
+        for g in d: 
             g['dist_skala'] = g['dist'] * skala_x
             g['elev_skala'] = g['elev'] * skala_y
 
@@ -52,7 +52,7 @@ def draw_cross_section(project_id, kop, skala_x, skala_y, sta_start, sta_end, da
     koordinat = 0   
     daftar_gambar = []
     for i,data in enumerate(data_survey): 
-        # gambar = doc.blocks.new(name=f'GAMBAR_{i+1}')
+        # gambar = doc.blocks.new(name=f'GAMBAR_{i+1}') 
         data = data_survey_block(doc,data_survey[i],i)
         
         batas_data = bbox.extents(data)

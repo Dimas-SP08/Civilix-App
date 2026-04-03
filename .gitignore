@@ -1,0 +1,15 @@
+# Secret Environment Variables
+.env
+
+# Database 
+# (You usually do not want to upload your local test database)
+db.sqlite3
+
+# Python Cache Files
+__pycache__/
+*.pyc
+*.pyo
+
+# Media folder 
+# (User uploads should not be stored in your GitHub code repository)
+media/

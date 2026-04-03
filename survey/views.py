@@ -390,6 +390,7 @@ def calculate_CS(request, project_id):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+import os
 import re
 from .services.ai_prompt import prompt_for_detect_anomalies,GeminiClient,prompts_make_report
 def analyze_anomaly_api(request):
@@ -408,7 +409,7 @@ def analyze_anomaly_api(request):
             prompt = prompt_for_detect_anomalies(tabel_data, survey_type)
             
             # 3. Panggil Gemini
-            ai = GeminiClient(api_code="AIzaSyAHsV9LsaY2EMtmqnj0yhY4MyNUrBUbQaM") 
+            ai = GeminiClient(api_code=os.getenv('GEMINI_API_KEY')) 
             response = ai.genrate_content(prompt, "gemini-2.5-flash", 0.3, 100000)
             clean_response = re.sub(r"```(?:json)?\s*", "", response)
             clean_response = re.sub(r"```", "", clean_response)
@@ -442,7 +443,7 @@ def api_generate_ai_report(request, project_id):
         prompt = prompts_make_report(data_str, purpose)
         
         # 3. Panggil Gemini
-        ai = GeminiClient(api_code="AIzaSyAHsV9LsaY2EMtmqnj0yhY4MyNUrBUbQaM") # Gunakan env var untuk API key yg aman!
+        ai = GeminiClient(api_code=os.getenv('GEMINI_API_KEY')) # Gunakan env var untuk API key yg aman!
         report_text_ai = ai.genrate_content(prompt, "gemini-2.5-flash", 0.7, 100000)
         
         # 4. Save hasil AI ke Database
