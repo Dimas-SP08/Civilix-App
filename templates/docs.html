@@ -10,93 +10,432 @@
 {% block content %}
 <div class="bg-slate-50 text-gray-800 overflow-x-hidden">
 
-    <!-- ============================================== -->
-    
-    <!-- Konten Utama -->
-    <main class="py-24 pt-40 bg-slate-50 min-h-screen">
-        <!-- ============================================== -->
-        <!-- Halaman Dokumentasi (BARU)                   -->
-        <!-- ============================================== -->
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Judul -->
-            <div class="text-center mb-12">
-                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900">Documentation</h1>
-                <p class="mt-4 text-lg text-gray-600">Learn how to use Land Measurement effectively.</p>
+    <main class="py-24 pt-32 lg:pt-40 bg-slate-50 min-h-screen">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="text-center mb-10">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900">Dokumentasi Civilix</h1>
+                <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Panduan lengkap menggunakan fitur pengukuran tanah, dari pemetaan profil hingga ekspor ke AutoCAD.</p>
             </div>
             
-            <!-- Konten Dokumentasi -->
-            <div class="bg-white p-8 md:p-12 rounded-2xl shadow-xl border border-gray-100 space-y-12">
+            <div class="flex flex-wrap gap-3 mb-10 justify-center">
+                <a href="#long-section" class="px-5 py-2.5 bg-white border border-teal-200 text-teal-700 rounded-full text-sm font-semibold hover:bg-teal-50 hover:shadow-md transition-all duration-200 flex items-center gap-2">
+                    <i data-lucide="git-commit" class="w-4 h-4"></i> Long Section
+                </a>
+                <a href="#cross-section" class="px-5 py-2.5 bg-white border border-teal-200 text-teal-700 rounded-full text-sm font-semibold hover:bg-teal-50 hover:shadow-md transition-all duration-200 flex items-center gap-2">
+                    <i data-lucide="split-square-horizontal" class="w-4 h-4"></i> Cross Section
+                </a>
+                <a href="#cut-fill" class="px-5 py-2.5 bg-white border border-teal-200 text-teal-700 rounded-full text-sm font-semibold hover:bg-teal-50 hover:shadow-md transition-all duration-200 flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4"></i> Cut & Fill
+                </a>
+                <a href="#export-dxf" class="px-5 py-2.5 bg-white border border-teal-200 text-teal-700 rounded-full text-sm font-semibold hover:bg-teal-50 hover:shadow-md transition-all duration-200 flex items-center gap-2">
+                    <i data-lucide="download-cloud" class="w-4 h-4"></i> Export DXF
+                </a>
+            </div>
+
+            <div class="space-y-10">
                 
-                <!-- Bagian 1: Getting Started -->
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">Getting Started</h2>
-                    <p class="text-gray-600 mb-4">Welcome! Here's how to get started with the platform:</p>
-                    <ul class="list-decimal list-outside pl-6 space-y-2 text-gray-700">
-                        <li><strong>Guest Mode:</strong> You can try our calculation tools immediately without an account. Note that your work will not be saved.</li>
-                        <li><strong>Register Account:</strong> Create a free account to save all your projects, access them from any device, and manage your data in the cloud.</li>
-                        <li><strong>Login:</strong> Access your personal dashboard with all your saved projects.</li>
-                    </ul>
-                </section>
-
-                <!-- Bagian 2: Leveling Calculations -->
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">How to Use Leveling Calculations</h2>
-                    <p class="text-gray-600 mb-4">Our Sipat Datar (Leveling) tool is designed for speed and accuracy.</p>
-                    <ol class="list-decimal list-outside pl-6 space-y-2 text-gray-700">
-                        <li>Navigate to the "Leveling" tool from your dashboard or the guest mode portal.</li>
-                        <li>
-                            <strong>Input Data:</strong> You can either:
-                            <ul class="list-disc list-inside pl-4 mt-2">
-                                <li>Upload an Excel file (template provided).</li>
-                                <li>Manually enter your station points, BS (Backsight), and FS (Foresight) data into the table.</li>
+                <section id="long-section" class="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-gray-100 scroll-mt-32">
+                    <div class="flex items-center gap-4 mb-6 border-b-2 border-teal-100 pb-4">
+                        <div class="p-3 bg-teal-50 rounded-xl">
+                            <i data-lucide="git-commit" class="w-8 h-8 text-teal-600"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900">Long Section (Potongan Memanjang)</h2>
+                            <p class="text-sm text-teal-600 font-medium mt-1">Pemetaan Kontur Tanah Asli vs Elevasi Rencana</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-8 text-lg leading-relaxed">
+                        Fitur <strong>Long Section</strong> memvisualisasikan profil elevasi tanah secara memanjang dari titik awal stasiun (STA Awal) hingga titik akhir proyek. Modul ini adalah fondasi utama untuk merencanakan kelandaian jalan, saluran drainase, atau trase rel kereta api sebelum Anda menghitung volume galian dan timbunan.
+                    </p>
+                    
+                    <div class="space-y-8">
+                        
+                        <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="check-circle" class="w-6 h-6 text-teal-600"></i>
+                                <h3 class="text-xl font-bold text-gray-800">1. Prasyarat Data (Data Input)</h3>
+                            </div>
+                            <p class="text-gray-600 mb-3 ml-9">
+                                Modul Long Section tidak memerlukan input data ukur manual yang baru. Sistem bekerja secara terintegrasi dengan langkah sebelumnya:
+                            </p>
+                            <ul class="list-disc list-outside pl-14 space-y-2 text-gray-600">
+                                <li>Pastikan Anda telah menyelesaikan dan memproses data pengukuran pada menu <strong>Sipat Datar (Leveling)</strong>.</li>
+                                <li>Data <strong>Stasiun (STA)</strong> dan <strong>Elevasi Tanah Asli (H)</strong> akan ditarik secara otomatis oleh sistem.</li>
                             </ul>
-                        </li>
-                        <li>
-                            <strong>(Optional) 3-Wire Validation:</strong> If you used 3-wire leveling, enter your Top, Mid, and Bot readings. The system will automatically validate the accuracy (Top + Bot) / 2 = Mid and flag any errors.
-                        </li>
-                        <li><strong>Process:</strong> Click the "Calculate" button.</li>
-                        <li><strong>View Results:</strong> The system will instantly generate a complete table with Rise/Fall, Elevation (H), and corrections. You will also see an interactive Plotly graph visualizing the ground profile.</li>
-                    </ol>
+                        </div>
+                        
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="settings-2" class="w-6 h-6 text-slate-700"></i>
+                                <h3 class="text-xl font-bold text-gray-800">2. Menentukan Elevasi Rencana (Design Grade)</h3>
+                            </div>
+                            <p class="text-gray-600 mb-3 ml-9">
+                                Untuk membandingkan kondisi tanah lapangan dengan target desain proyek, Anda perlu mengatur parameter desain.
+                            </p>
+                            <ul class="list-decimal list-outside pl-14 space-y-2 text-gray-600">
+                                <li><strong>Elevasi Awal:</strong> Masukkan elevasi target pada STA paling awal (STA 0+000).</li>
+                                <li><strong>Elevasi Akhir:</strong> Masukkan elevasi target pada STA paling akhir proyek.</li>
+                                <li><strong>Interpolasi Otomatis:</strong> Setelah menekan tombol proses, sistem Civilix akan secara otomatis melakukan perhitungan <em>interpolasi linear</em>. Sistem akan membagi rata kemiringan (slope) dan menentukan elevasi rencana untuk setiap STA yang berada di antara titik awal dan akhir.</li>
+                            </ul>
+                        </div>
+
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="bar-chart-2" class="w-6 h-6 text-slate-700"></i>
+                                <h3 class="text-xl font-bold text-gray-800">3. Membaca Hasil & Visualisasi</h3>
+                            </div>
+                            <p class="text-gray-600 mb-3 ml-9">
+                                Setelah diproses, Civilix akan menyajikan data dalam dua bentuk utama: Tabel Numerik dan Grafik Interaktif.
+                            </p>
+                            
+                            <div class="ml-9 grid md:grid-cols-2 gap-6 mt-4">
+                                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                                    <h4 class="font-semibold text-teal-700 mb-2 flex items-center gap-2">
+                                        <i data-lucide="table" class="w-4 h-4"></i> Tabel Elevasi
+                                    </h4>
+                                    <p class="text-sm text-gray-600">Tabel akan menampilkan rincian per stasiun yang berisi: STA, Jarak Kumulatif, Elevasi Existing (Asli), Elevasi Design (Rencana), dan Beda Tinggi (menunjukkan indikasi awal area galian atau timbunan).</p>
+                                </div>
+                                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                                    <h4 class="font-semibold text-teal-700 mb-2 flex items-center gap-2">
+                                        <i data-lucide="line-chart" class="w-4 h-4"></i> Grafik Interaktif (Plotly)
+                                    </h4>
+                                    <p class="text-sm text-gray-600">Menampilkan kurva dengan dua garis utama (Tanah Asli & Tanah Rencana). Anda dapat melakukan <strong>Zoom In/Out</strong> dengan menahan klik kiri mouse, atau melakukan <strong>Hover</strong> pada titik tertentu untuk melihat detail elevasi yang presisi.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 p-5 rounded-xl border border-blue-200 flex gap-4 items-start mt-8">
+                            <div class="p-2 bg-blue-100 rounded-lg shrink-0 mt-0.5">
+                                <i data-lucide="lightbulb" class="w-6 h-6 text-blue-700"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-blue-900 text-lg">Pro Tip: Evaluasi Kemiringan</h4>
+                                <p class="text-blue-800 mt-2 leading-relaxed">
+                                    Perhatikan visualisasi grafik Anda. Jika jarak antara garis "Tanah Asli" dan "Tanah Rencana" terlalu jauh di sepanjang grafik, ini mengindikasikan proyek Anda akan membutuhkan pekerjaan Galian (Cut) atau Timbunan (Fill) yang sangat masif dan mahal. Pertimbangkan untuk menyesuaikan kembali Elevasi Awal dan Akhir Anda untuk mengoptimalkan biaya pekerjaan tanah (Earthwork).
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
                 </section>
 
-                <!-- Bagian 3: Cut & Fill Calculations -->
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">How to Use Cut & Fill Calculations</h2>
-                    <p class="text-gray-600 mb-4">Calculate excavation and embankment volumes with ease.</p>
-                    <ol class="list-decimal list-outside pl-6 space-y-2 text-gray-700">
-                        <li>Select the "Cut & Fill" tool.</li>
-                        <li>
-                            <strong>Input Data:</strong> Provide your stationing (STA) and existing ground elevation data.
-                        </li>
-                        <li>
-                            <strong>Set Design Elevation:</strong> Enter your proposed design elevation (this can be a single level or a varying slope).
-                        </li>
-                        <li><strong>Process:</strong> Click "Calculate Volume".</li>
-                        <li><strong>View Results:</strong> You will receive a detailed report showing the Cut (Galian) and Fill (Timbunan) volume at each station, as well as the total net volume.</li>
-                    </ol>
-                </section>
+                <section id="cross-section" class="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-gray-100 scroll-mt-32">
+                    <div class="flex items-center gap-4 mb-6 border-b-2 border-teal-100 pb-4">
+                        <div class="p-3 bg-teal-50 rounded-xl">
+                            <i data-lucide="split-square-horizontal" class="w-8 h-8 text-teal-600"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900">Cross Section (Potongan Melintang)</h2>
+                            <p class="text-sm text-teal-600 font-medium mt-1">Pemetaan Profil Melintang & Desain Badan Jalan</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-8 text-lg leading-relaxed">
+                        Berbeda dengan Long Section yang memanjang, <strong>Cross Section</strong> memotong jalur proyek secara tegak lurus (melintang) pada setiap titik stasiun (STA). Fitur ini krusial untuk melihat bentuk lereng tanah asli di sisi kiri dan kanan jalan, serta menjadi dasar perhitungan volume Galian dan Timbunan (Cut & Fill).
+                    </p>
+                    
+                    <div class="bg-amber-50 p-6 rounded-xl border border-amber-200 mb-8 flex gap-4 items-start shadow-sm">
+                        <div class="p-2 bg-amber-100 rounded-lg shrink-0">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-700"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-amber-900 text-lg">Aturan Wajib Input Offset (Jarak)</h4>
+                            <p class="text-amber-800 mt-2 leading-relaxed">
+                                Untuk menggambar penampang melintang yang presisi, sistem menggunakan koordinat Kartesius dengan titik As Jalan (Garis Tengah) sebagai titik Nol (0).
+                            </p>
+                            <ul class="list-disc list-outside pl-5 mt-2 space-y-1 text-amber-800 font-medium">
+                                <li><strong>Sebelah KIRI As Jalan:</strong> Harus diinput dengan angka negatif (Contoh: -3, -5.5, -10).</li>
+                                <li><strong>AS JALAN (Tengah):</strong> Selalu diinput dengan nilai 0.</li>
+                                <li><strong>Sebelah KANAN As Jalan:</strong> Harus diinput dengan angka positif (Contoh: 3, 5.5, 10).</li>
+                            </ul>
+                        </div>
+                    </div>
 
-                <!-- Bagian 4: Reports & Export -->
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 border-b-2 border-teal-200 pb-2 mb-4">Understanding Your Results</h2>
-                    <p class="text-gray-600 mb-4">Your data is more than just numbers.</p>
-                    <ul class="list-disc list-outside pl-6 space-y-2 text-gray-700">
-                        <li><strong>Interactive Graphs:</strong> All calculation results are paired with Plotly graphs. You can zoom, pan, and hover over data points to get detailed information.</li>
-                        <li><strong>Gemini AI Reports:</strong> For logged-in users, you can click "Generate AI Analysis". Gemini will review your results and provide insights, such as identifying potential reading errors, noting the steepest slopes, or summarizing the overall project.</li>
-                        <li><strong>Excel Export:</strong> Click the "Export to Excel" button at any time to download a formatted `.xlsx` file containing both your raw input data and the complete calculated results.</li>
-                    </ul>
-                </section>
+                    <div class="space-y-8">
+                        
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <i data-lucide="map-pin" class="w-6 h-6 text-teal-600"></i>
+                                    <h3 class="text-xl font-bold text-gray-800">1. Pilih Stasiun (STA)</h3>
+                                </div>
+                                <p class="text-gray-600">
+                                    Gunakan menu <em>dropdown</em> yang tersedia untuk memilih titik STA mana yang akan Anda analisis. Daftar STA ini ditarik secara otomatis dari data pengukuran utama Anda. Anda harus membuat penampang untuk setiap STA agar perhitungan volume nantinya akurat.
+                                </p>
+                            </div>
 
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <i data-lucide="pencil-ruler" class="w-6 h-6 text-teal-600"></i>
+                                    <h3 class="text-xl font-bold text-gray-800">2. Input Elevasi Lapangan</h3>
+                                </div>
+                                <p class="text-gray-600">
+                                    Masukkan titik-titik pengukuran (Offset dan Elevasi) tanah asli pada STA tersebut. <strong>Tips:</strong> Semakin banyak titik observasi yang Anda masukkan (terutama di area tanah yang bergelombang/curam), semakin presisi lekukan grafik yang dihasilkan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="settings" class="w-6 h-6 text-slate-700"></i>
+                                <h3 class="text-xl font-bold text-gray-800">3. Parameter Desain Jalan (Badan Jalan Rencana)</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4 ml-9">
+                                Selain tanah asli, Anda harus menentukan dimensi proyek/jalan rencana yang akan dibangun di atas tanah tersebut.
+                            </p>
+                            <div class="ml-9 bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+                                <ul class="space-y-4 text-gray-600">
+                                    <li class="flex gap-3">
+                                        <i data-lucide="arrow-left-right" class="w-5 h-5 text-teal-500 shrink-0 mt-0.5"></i>
+                                        <div>
+                                            <strong class="text-gray-800">Lebar Lajur (Lane Width):</strong> Masukkan lebar jalan dari titik as (tengah) ke salah satu sisi (kiri/kanan). <em>Contoh: Jika total lebar jalan adalah 6 meter, maka Lebar Lajur yang diinput adalah 3 meter.</em>
+                                        </div>
+                                    </li>
+                                    <li class="flex gap-3">
+                                        <i data-lucide="trending-down" class="w-5 h-5 text-teal-500 shrink-0 mt-0.5"></i>
+                                        <div>
+                                            <strong class="text-gray-800">Kemiringan Jalan (Slope / Camber):</strong> Masukkan persentase kemiringan melintang jalan dari as ke tepi (digunakan untuk drainase air hujan). Biasanya bernilai antara -2% hingga -3%. Sistem akan otomatis menyesuaikan elevasi tepi jalan berdasarkan slope ini.
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="monitor-play" class="w-6 h-6 text-slate-700"></i>
+                                <h3 class="text-xl font-bold text-gray-800">4. Analisis Visualisasi Grafik</h3>
+                            </div>
+                            <p class="text-gray-600 ml-9">
+                                Sistem akan memproses data Anda dan menampilkan grafik Cross Section interaktif untuk STA yang dipilih. Pada grafik ini, Anda akan melihat persinggungan antara dua area:
+                            </p>
+                            <ul class="list-disc list-outside pl-14 mt-3 space-y-2 text-gray-600">
+                                <li><strong>Kurva Existing (Tanah Asli):</strong> Bentuk permukaan tanah di lapangan sebelum ada proyek.</li>
+                                <li><strong>Garis Desain (Rencana):</strong> Bentuk badan jalan/proyek yang sudah mengakomodasi Lebar Lajur dan Slope. Titik tengah (As) dari garis desain ini elevasi-nya otomatis mengambil dari hasil interpolasi <strong>Elevasi Rencana di Long Section</strong>.</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-200 flex gap-4 items-start mt-4 shadow-sm">
+                            <div class="p-2 bg-blue-100 rounded-lg shrink-0">
+                                <i data-lucide="lightbulb" class="w-6 h-6 text-blue-700"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-blue-900 text-lg">Pro Tip: Dasar Perhitungan Volume</h4>
+                                <p class="text-blue-800 mt-2 leading-relaxed">
+                                    Pastikan grafik Cross Section memotong dengan sempurna (Existing vs Design). Area luasan yang terbentuk di bawah desain (tapi di atas tanah asli) adalah luasan <strong>Timbunan (Fill)</strong>, sedangkan area di atas desain (tapi di bawah tanah asli) adalah luasan <strong>Galian (Cut)</strong>. Jika data Cross Section tidak lengkap pada dua STA yang berdekatan, sistem tidak bisa menghitung total volume pada modul selanjutnya.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+                <section id="cut-fill" class="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-gray-100 scroll-mt-32">
+                    <div class="flex items-center gap-4 mb-6 border-b-2 border-teal-100 pb-4">
+                        <div class="p-3 bg-teal-50 rounded-xl">
+                            <i data-lucide="layers" class="w-8 h-8 text-teal-600"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900">Cut & Fill (Volume Pekerjaan)</h2>
+                            <p class="text-sm text-teal-600 font-medium mt-1">Perhitungan Otomatis Galian & Timbunan Tanah</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-8 text-lg leading-relaxed">
+                        Modul <strong>Cut & Fill</strong> merupakan tahap puncak dari analisis topografi di Civilix. Fitur ini akan mengkalkulasi secara otomatis berapa meter kubik ($m^3$) volume tanah yang harus digali (Cut) dan berapa banyak yang harus ditimbun (Fill) untuk mewujudkan desain rencana Anda di lapangan.
+                    </p>
+
+                    <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-200 mb-8 flex gap-4 items-start shadow-sm">
+                        <div class="p-2 bg-indigo-100 rounded-lg shrink-0">
+                            <i data-lucide="zap" class="w-6 h-6 text-indigo-700"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-indigo-900 text-lg">Modul Terintegrasi (Tanpa Input Manual)</h4>
+                            <p class="text-indigo-800 mt-2 leading-relaxed">
+                                Anda tidak perlu memasukkan angka apapun di halaman ini. Sistem akan melakukan perhitungan secara otomatis <strong>dengan syarat utama:</strong> Anda telah mengisi Elevasi Rencana di menu <em>Long Section</em> dan mengatur parameter desain/dimensi pada setiap STA di menu <em>Cross Section</em>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8">
+                        
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="calculator" class="w-6 h-6 text-teal-600"></i>
+                                <h3 class="text-xl font-bold text-gray-800">1. Metodologi Perhitungan Civilix</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4 ml-9">
+                                Aplikasi ini menggunakan standar perhitungan teknik sipil yang diakui, yaitu <strong>Metode Rata-Rata Ujung (End-Area Method)</strong>. Prosesnya berjalan dalam dua tahap:
+                            </p>
+                            <div class="ml-9 grid md:grid-cols-2 gap-6 mt-4">
+                                <div class="bg-slate-50 p-5 rounded-lg border border-slate-100 shadow-sm">
+                                    <h4 class="font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-2">Tahap A: Luas Penampang (Area)</h4>
+                                    <p class="text-sm text-gray-600">Menghitung luas area ($m^2$) bidang galian dan timbunan tepat pada satu titik STA berdasarkan persinggungan garis desain dan tanah asli di Cross Section.</p>
+                                </div>
+                                <div class="bg-slate-50 p-5 rounded-lg border border-slate-100 shadow-sm">
+                                    <h4 class="font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-2">Tahap B: Volume Antar STA</h4>
+                                    <p class="text-sm text-gray-600">Sistem mengambil luas STA pertama ditambah luas STA kedua, dibagi dua, lalu dikalikan dengan jarak (L) antara kedua STA tersebut untuk mendapatkan volume ($m^3$).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="file-spreadsheet" class="w-6 h-6 text-slate-700"></i>
+                                <h3 class="text-xl font-bold text-gray-800">2. Membaca Laporan Hasil Perhitungan</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4 ml-9">
+                                Hasil akhir akan disajikan dalam bentuk tabel komprehensif yang siap diekspor. Berikut adalah cara membaca kolom-kolom utamanya:
+                            </p>
+                            <ul class="list-none list-outside ml-9 space-y-4 text-gray-600 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check-square" class="w-5 h-5 text-teal-500 shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="text-gray-800">Kolom Jarak (d):</strong> Menunjukkan jarak lurus antara STA saat ini dengan STA sebelumnya.
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check-square" class="w-5 h-5 text-teal-500 shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="text-gray-800">Kolom Luas Galian & Timbunan ($m^2$):</strong> Menampilkan data luasan penampang yang ditarik dari hasil analisis Cross Section per STA.
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check-square" class="w-5 h-5 text-teal-500 shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="text-gray-800">Kolom Volume ($m^3$):</strong> Hasil perhitungan volume aktual pekerjaan tanah di segmen tersebut (berada di antara dua stasiun).
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check-square" class="w-5 h-5 text-teal-500 shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <strong class="text-gray-800">Total Kumulatif:</strong> Terletak di baris paling bawah tabel. Ini adalah rangkuman total keseluruhan volume tanah yang harus digali atau didatangkan untuk merampungkan proyek Anda.
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-200 flex gap-4 items-start mt-4 shadow-sm">
+                            <div class="p-2 bg-blue-100 rounded-lg shrink-0">
+                                <i data-lucide="lightbulb" class="w-6 h-6 text-blue-700"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-blue-900 text-lg">Pro Tip: Optimasi Earthwork (Keseimbangan Tanah)</h4>
+                                <p class="text-blue-800 mt-2 leading-relaxed">
+                                    Dalam perencanaan jalan yang ekonomis, usahakan <strong>Total Volume Galian</strong> mendekati atau sama dengan <strong>Total Volume Timbunan</strong> (Balance). Jika hal ini tercapai, tanah hasil galian dari lokasi yang tinggi bisa langsung digunakan untuk menimbun area yang rendah. Ini akan menghemat biaya penyewaan <em>Dump Truck</em> karena Anda tidak perlu membeli tanah dari luar (<em>Borrow Pit</em>) atau membuang tanah sisa (<em>Waste/Disposal</em>).
+                                </p>
+                                <p class="text-blue-800 mt-2 font-medium">
+                                    <em>Jika terjadi ketidakseimbangan yang ekstrem, kembalilah ke menu Long Section dan sesuaikan kembali "Elevasi Rencana" Anda.</em>
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+                <section id="export-dxf" class="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-gray-100 scroll-mt-32">
+                    <div class="flex items-center gap-4 mb-6 border-b-2 border-teal-100 pb-4">
+                        <div class="p-3 bg-teal-50 rounded-xl">
+                            <i data-lucide="download-cloud" class="w-8 h-8 text-teal-600"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900">Export ke AutoCAD (.DXF)</h2>
+                            <p class="text-sm text-teal-600 font-medium mt-1">Otomatisasi Pembuatan Gambar Kerja CAD</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-600 mb-8 text-lg leading-relaxed">
+                        Tinggalkan cara lama menggambar ulang (<em>drafting</em>) titik demi titik yang memakan waktu berhari-hari. Civilix memungkinkan Anda mengunduh hasil penggambaran <strong>Long Section</strong> dan <strong>Cross Section</strong> langsung menjadi file CAD (format .DXF) yang rapi, akurat, dan siap cetak.
+                    </p>
+
+                    <div class="space-y-8">
+                        
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-4">
+                                <i data-lucide="package" class="w-6 h-6 text-teal-600"></i>
+                                <h3 class="text-xl font-bold text-gray-800">1. Apa yang Ada di Dalam File DXF?</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4 ml-9">File yang dihasilkan bukan sekadar garis acak, melainkan gambar teknik sipil standar yang mencakup:</p>
+                            
+                            <div class="ml-9 grid md:grid-cols-3 gap-5">
+                                <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md">
+                                    <i data-lucide="grid" class="w-6 h-6 text-teal-500 mb-3"></i>
+                                    <h4 class="font-bold text-gray-800">Grid & Elevasi</h4>
+                                    <p class="text-sm text-gray-600 mt-2">Sistem koordinat lengkap dengan garis grid pembantu, teks jarak STA, dan keterangan elevasi.</p>
+                                </div>
+                                <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md">
+                                    <i data-lucide="layout" class="w-6 h-6 text-teal-500 mb-3"></i>
+                                    <h4 class="font-bold text-gray-800">Layer Terstruktur</h4>
+                                    <p class="text-sm text-gray-600 mt-2">Garis Tanah Asli, Garis Desain, Teks, dan Grid telah dipisah secara otomatis ke dalam <em>Layer</em> yang berbeda.</p>
+                                </div>
+                                <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md">
+                                    <i data-lucide="stamp" class="w-6 h-6 text-teal-500 mb-3"></i>
+                                    <h4 class="font-bold text-gray-800">Kop Gambar (Title Block)</h4>
+                                    <p class="text-sm text-gray-600 mt-2">Gambar sudah dibingkai lengkap dengan Kop Standar. Anda hanya perlu mengedit nama proyek/perusahaan Anda di AutoCAD.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pl-2">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i data-lucide="mouse-pointer-click" class="w-6 h-6 text-slate-700"></i>
+                                <h3 class="text-xl font-bold text-gray-800">2. Cara Melakukan Export</h3>
+                            </div>
+                            <ol class="list-decimal list-outside ml-14 mt-3 space-y-3 text-gray-600">
+                                <li>Buka halaman proyek atau dashboard yang berisi hasil kalkulasi akhir Anda.</li>
+                                <li>Cari dan klik tombol <strong>Export to DXF</strong> pada panel navigasi.</li>
+                                <li>Pilih jenis gambar yang ingin diunduh (Bisa pilih hanya <em>Long Section</em>, hanya <em>Cross Section</em>, atau <em>Bundle Semua Gambar</em>).</li>
+                                <li>Sistem akan memproses sebentar, lalu file berekstensi <code>.dxf</code> akan terunduh ke komputer Anda.</li>
+                            </ol>
+                        </div>
+
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-200 flex gap-4 items-start shadow-sm mt-8">
+                            <div class="p-2 bg-blue-100 rounded-lg shrink-0 mt-1">
+                                <i data-lucide="monitor-x" class="w-6 h-6 text-blue-700"></i>
+                            </div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-blue-900 text-lg">Solusi Layar Kosong (Blank) di AutoCAD</h4>
+                                <p class="text-blue-800 mt-2 leading-relaxed">
+                                    Saat file DXF pertama kali dibuka, layar AutoCAD Anda mungkin terlihat kosong/hitam. <strong>Jangan panik!</strong> Gambarnya berhasil dibuat, namun lokasinya berada di luar jangkauan pandangan kamera Anda. Ikuti langkah cepat ini pada <em>Command Line</em> AutoCAD Anda:
+                                </p>
+                                
+                                <div class="bg-[#1e1e1e] border-l-4 border-green-500 text-green-400 font-mono text-sm p-4 rounded shadow-inner mt-4 mb-4 w-full">
+                                    <div><span class="text-gray-400">Command:</span> Z <span class="text-gray-500 italic pl-2">// Ketik Z lalu tekan Enter (Zoom)</span></div>
+                                    <div class="mt-2"><span class="text-gray-400">Command:</span> E <span class="text-gray-500 italic pl-2">// Ketik E lalu tekan Enter (Extents)</span></div>
+                                </div>
+                                
+                                <p class="text-blue-800 font-medium">
+                                    Perintah <em>Zoom Extents</em> tersebut akan memaksa AutoCAD melacak seluruh objek dan menampilkannya tepat di tengah layar Anda.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-50 p-6 rounded-xl border border-amber-200 flex gap-4 items-start shadow-sm mt-4">
+                            <div class="p-2 bg-amber-100 rounded-lg shrink-0">
+                                <i data-lucide="settings-2" class="w-6 h-6 text-amber-700"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-amber-900 text-lg">Pro Tip: Penyesuaian Layer untuk Print (Plotting)</h4>
+                                <p class="text-amber-800 mt-2 leading-relaxed">
+                                    Karena Civilix sudah mengorganisir objek ke dalam Layer yang berbeda, proses cetak akan sangat mudah. Buka menu <strong>Layer Properties</strong> di AutoCAD (ketik perintah: <code>LA</code> lalu Enter). Dari sana, Anda dapat dengan mudah mengubah warna garis dan ketebalan garis (<em>Lineweight</em>)—misalnya membuat garis Desain lebih tebal dari garis Grid—agar sesuai dengan standar gambar instansi atau perusahaan Anda sebelum dokumen di-Plot (Print).
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
             </div>
         </div>
     </main>
-
-    
-    <!-- Script untuk Mobile Menu -->
-    
 </div>
-
 {% endblock content %}
 {% block extra_js %}
-
+<script>
+    // Inisialisasi ikon jika belum diload otomatis dari base.html
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
 {% endblock extra_js %}
